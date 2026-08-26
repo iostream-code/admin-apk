@@ -1,0 +1,122 @@
+<div id="finance-payable-content" class="pb-10">
+
+  <div class="px-3 pt-3 pb-2">
+    <div class="card-surface p-2.5">
+      <div class="text-center pb-2 mb-2 border-b border-ink-faint">
+        <p class="text-[10px] font-bold text-ink-secondary uppercase tracking-wide">Saldo</p>
+        <p class="text-lg font-bold text-primary leading-tight" id="payable_saldo">-</p>
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <div class="text-center">
+          <p class="text-[10px] font-bold text-ink-secondary uppercase tracking-wide">Debet</p>
+          <p class="text-sm font-bold text-info leading-tight" id="payable_total_debet">0</p>
+        </div>
+        <div class="text-center">
+          <p class="text-[10px] font-bold text-ink-secondary uppercase tracking-wide">Kredit</p>
+          <p class="text-sm font-bold text-danger leading-tight" id="payable_total_kredit">0</p>
+        </div>
+        <div class="text-center">
+          <p class="text-[10px] font-bold text-ink-secondary uppercase tracking-wide">Total</p>
+          <p class="text-sm font-bold leading-tight" id="payable_total_keseluruhan">0</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="px-3 pb-2 flex items-center gap-2">
+    <select id="payable_filter_kas" class="mat-input flex-1">
+      <option value="">Memuat kas...</option>
+    </select>
+    <button id="payable_refresh" class="icon-btn flex-shrink-0" title="Muat Ulang">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10" />
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="px-3 pb-2 flex items-center gap-2">
+    <select id="payable_filter_bulan" class="mat-input flex-1">
+      <option value="all">All Bulan</option>
+    </select>
+    <select id="payable_filter_tahun" class="mat-input flex-1">
+      <option value="all">All Tahun</option>
+    </select>
+  </div>
+
+  <div class="px-3 pb-4">
+    <div class="flex items-center justify-between mb-1.5 px-0.5">
+      <p class="section-title text-sm">Data | <span class="section-count" id="payable_count">0</span></p>
+      <!-- Tombol Upload Bukti Transfer/Nota -- HANYA tampil saat filter Kas
+           sedang di "Kas Kecil" (lihat toggleUploadBuktiButton() di
+           payable.js). Sejajar dgn section-title, ikon saja (atas permintaan
+           user 2026-08-26). -->
+      <button id="payable_btn_upload_bukti" class="icon-btn icon-btn--primary hidden" title="Upload Bukti Transfer / Nota Pembayaran">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+        </svg>
+      </button>
+    </div>
+    <div class="card-surface overflow-hidden">
+      <div class="tbl-wrap">
+        <table class="tbl-dark" style="min-width:640px;">
+          <thead>
+            <tr>
+              <th class="td-center" style="width:32px;">No</th>
+              <th class="td-center">Tanggal</th>
+              <th class="td-left">Kategori</th>
+              <th class="td-left">Keterangan</th>
+              <th class="td-center">Nominal</th>
+              <th class="td-center">Admin</th>
+            </tr>
+          </thead>
+          <tbody id="payable_table_body">
+            <tr>
+              <td colspan="6" class="tbl-empty">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== Popup Upload Bukti Transfer/Nota (Kas Kecil) ===================== -->
+  <div id="popup-payable-upload-bukti"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+        <div class="font-bold text-ink-primary text-sm">Upload Bukti Transfer / Nota</div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div class="p-3 space-y-3">
+        <div>
+          <label class="mat-label">Kategori *</label>
+          <select id="pb_kategori" class="mat-input">
+            <option value="">-- Pilih Kategori --</option>
+          </select>
+        </div>
+        <div>
+          <label class="mat-label">Nominal *</label>
+          <input id="pb_nominal" type="text" inputmode="numeric" class="mat-input text-right font-bold" placeholder="0" />
+        </div>
+        <div>
+          <label class="mat-label">Keterangan *</label>
+          <input id="pb_keterangan" type="text" class="mat-input" placeholder="Keterangan transaksi" />
+        </div>
+        <div>
+          <label class="mat-label">Bukti Transfer / Nota *</label>
+          <div id="pb_preview_wrap" class="hidden mb-2 text-center">
+            <img id="pb_preview" class="max-h-64 inline-block rounded border border-ink-faint cursor-zoom-in" />
+          </div>
+          <input type="file" id="pb_file" accept="image/*" class="hidden" />
+          <label for="pb_file" class="btn-action btn-action--primary block text-center cursor-pointer">📷 Pilih Foto Bukti</label>
+          <p id="pb_filename" class="text-xs text-ink-muted mt-1"></p>
+        </div>
+        <button id="pb_btn_submit" class="btn-action btn-action--success w-full mt-1">Simpan Transaksi</button>
+      </div>
+    </div>
+  </div>
+
+</div>

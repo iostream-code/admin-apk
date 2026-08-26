@@ -1,0 +1,311 @@
+/* @import wajib di baris paling atas file CSS (sebelum @tailwind sekalipun). */
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&family=Barlow:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================================================
+   TOPBAR -- indikator koneksi (#box_internet)
+   Disalin apa adanya dari ekspedisi-apk/inventory-apk (satu keluarga desain
+   lintas app workspace ini) -- dipakai lewat class, diganti-ganti oleh
+   version-check.js (dulu di admin-finance-apk asli inline style.backgroundColor
+   polos, dan sempat mati total sejak checkInternet() dihapus 2026-08-10).
+============================================================================= */
+.connection-indicator {
+  flex-shrink: 0;
+  margin-right: 10px;
+  width: 12px;
+  height: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.connection-indicator.connected {
+  background-color: #00ff00;
+  box-shadow: 0 0 8px #00ff00, 0 0 16px #00ff00;
+  animation: pulse-green 2s ease-in-out infinite;
+  border: none;
+}
+
+.connection-indicator.disconnected {
+  background-color: #ff0000;
+  box-shadow: 0 0 8px #ff0000, 0 0 16px #ff0000;
+  animation: pulse-red 1s ease-in-out infinite;
+  border: none;
+}
+
+@keyframes pulse-green {
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 8px #00ff00, 0 0 16px #00ff00;
+  }
+
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 4px #00ff00, 0 0 8px #00ff00;
+  }
+}
+
+@keyframes pulse-red {
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 8px #ff0000, 0 0 16px #ff0000;
+  }
+
+  50% {
+    opacity: 0.4;
+    box-shadow: 0 0 4px #ff0000, 0 0 8px #ff0000;
+  }
+}
+
+/* =============================================================================
+   DESIGN TOKENS
+   Disalin dari inventory-apk/ekspedisi-apk, --color-primary/-light diganti
+   BIRU (bukan hijau) -- persis gradient .bg-dark-gray-medium/.btn-primary-theme
+   finance-apk ("linear-gradient(315deg, #14418F, #056BBC)"), lihat
+   tailwind.config.js brand.600/700 utk sumber nilainya.
+============================================================================= */
+
+:root {
+  --color-primary: #056bbc;
+  --color-primary-light: #3b82f6;
+  --color-danger: #dc2626;
+  --color-warning: #d97706;
+  --color-success: #16a34a;
+  --color-info: #2563eb;
+
+  /* bg-base, text-*, dan border-* diambil dari palet ekspedisi-apk/inventory-apk
+     (satu keluarga warna netral lintas app di workspace ini, cuma brand yang beda). */
+  --bg-base: #f5f7fa;
+  --bg-surface: #ffffff;
+  --bg-raised: #f8fafc;
+  --bg-overlay: #e2e8f0;
+
+  --text-primary: #0b1220;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-faint: #cbd5e1;
+
+  --border-default: #e2e8f0;
+  --border-subtle: #cbd5e1;
+
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+/* Menu tab (Point/Absen/Finance + sub-tab Sales/Produksi/Payment/Payable):
+   matikan outline focus bawaan browser & efek "tap highlight" biru di mobile,
+   supaya satu-satunya warna biru yang muncul adalah state aktif yang kita
+   atur sendiri lewat JS (bg-primary), bukan style bawaan browser saat/setelah
+   ditekan. Disalin apa adanya dari inventory-apk/src/styles/main.css. */
+.hnt-tab-primary,
+.hnt-tab-secondary {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.hnt-tab-primary:focus,
+.hnt-tab-primary:focus-visible,
+.hnt-tab-secondary:focus,
+.hnt-tab-secondary:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* =============================================================================
+   ANIMASI POPUP / DIALOG
+   Dipakai oleh dialog.js/toast.js -- backdrop fade + panel scale/slide-up,
+   supaya buka/tutup terasa halus (bukan langsung muncul/hilang).
+============================================================================= */
+.app-overlay-backdrop {
+  @apply opacity-0 transition-opacity duration-200 ease-out;
+}
+
+.app-overlay-backdrop.is-open {
+  @apply opacity-100;
+}
+
+.app-overlay-panel {
+  @apply opacity-0 scale-95 translate-y-3 transition-all duration-200 ease-out;
+}
+
+.app-overlay-backdrop.is-open .app-overlay-panel {
+  @apply opacity-100 scale-100 translate-y-0;
+}
+
+
+body {
+  margin: 0;
+  font-family: 'Barlow', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* =============================================================================
+   KOMPONEN -- dasar yang dipakai dashboard/login sekarang, dan disiapkan utk
+   halaman-halaman berikutnya (Point Sales/Produksi/Admin/SJ, Absensi, Data
+   Gaji, Data Transaksi) supaya begitu diporting langsung terlihat konsisten,
+   tanpa perlu menemukan ulang gaya kartu/tabel/tombol dari nol. Nama & bentuk
+   class disamakan dgn inventory-apk/src/styles/main.css.
+============================================================================= */
+@layer components {
+  .card-surface {
+    @apply bg-surface rounded-md border border-ink-faint shadow-sm;
+  }
+
+  /* [UPDATE 2026-08-26 atas permintaan user, "seragamkan ukuran tinggi
+     search-input-wrap filter dan button refresh yang kebanyakan sejajar"]
+     w-9/h-9 -> w-10/h-10 supaya SAMA TINGGI dgn .search-input (h-10) &
+     .mat-input (h-10, lihat di bawah) -- ketiganya sering ditaruh
+     berdampingan dlm satu baris flex (search + dropdown filter + tombol
+     refresh), sebelumnya beda tinggi (36px/40px/44px) jadi kelihatan tidak
+     rata. */
+  .icon-btn {
+    @apply w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-md bg-surface-raised border border-ink-faint text-ink-secondary transition-colors;
+  }
+
+  .icon-btn:hover {
+    @apply bg-surface-overlay text-ink-primary;
+  }
+
+  .icon-btn:active {
+    @apply bg-ink-faint;
+  }
+
+  .icon-btn--primary {
+    @apply bg-primary border-transparent text-white;
+  }
+
+  .icon-btn--primary:hover {
+    @apply bg-primary text-white brightness-90;
+  }
+
+  .icon-btn--danger {
+    @apply bg-danger border-transparent text-white;
+  }
+
+  .icon-btn--warning {
+    @apply bg-warning border-transparent text-white;
+  }
+
+  .section-title {
+    @apply text-lg font-bold text-ink-primary;
+  }
+
+  .section-count {
+    @apply text-lg font-semibold text-ink-secondary;
+  }
+
+  .btn-action {
+    @apply w-full py-3 rounded-md font-bold text-sm tracking-wide text-white cursor-pointer text-center transition;
+  }
+
+  .btn-action--primary {
+    @apply bg-primary hover:brightness-95;
+  }
+
+  .btn-action--success {
+    @apply bg-success hover:brightness-95;
+  }
+
+  .btn-action--danger {
+    @apply bg-danger hover:brightness-95;
+  }
+
+  .search-input-wrap {
+    @apply relative;
+  }
+
+  .search-input {
+    @apply w-full h-10 pl-9 pr-3 rounded-md border border-ink-faint bg-surface-raised text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10;
+  }
+
+  .search-icon {
+    @apply absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted text-sm;
+  }
+
+  .tbl-wrap {
+    @apply w-full overflow-auto;
+    max-height: 65vh;
+  }
+
+  .tbl-dark {
+    @apply w-full border-collapse text-xs;
+  }
+
+  .tbl-dark thead th {
+    @apply sticky top-0 z-10 bg-surface-raised text-ink-secondary font-bold uppercase tracking-wide text-[11px] py-2 px-2 border-b border-ink-faint;
+  }
+
+  .tbl-dark tbody td {
+    @apply py-2 px-2 border-b border-surface-overlay text-ink-primary whitespace-nowrap;
+  }
+
+  .tbl-empty {
+    @apply text-center py-8 text-ink-muted text-sm;
+  }
+
+  .td-center {
+    text-align: center;
+  }
+
+  .td-left {
+    text-align: left;
+  }
+
+  /* Ditambah 2026-08-26 saat porting Point Sales/Produksi (form popup Kirim
+     Alamat/Validasi Client, tombol aksi kolom tabel: Kirim/Detail/Valid) --
+     nama & bentuk disamakan dgn mat-label/mat-input/btn-tbl-- inventory-apk. */
+  .mat-label {
+    @apply block text-[11px] font-bold text-ink-secondary tracking-wide uppercase mb-1.5;
+  }
+
+  /* h-11 -> h-10 atas permintaan user (lihat catatan di .icon-btn) --
+     disamakan dgn .search-input & .icon-btn (40px) supaya rata kalau
+     ditaruh berdampingan dlm satu baris filter. */
+  .mat-input {
+    @apply w-full h-10 px-3 rounded-md border border-ink-faint bg-surface-raised text-sm text-ink-primary outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:text-ink-secondary disabled:bg-surface-overlay;
+  }
+
+  .btn-tbl {
+    @apply inline-block px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap transition border-none cursor-pointer;
+  }
+
+  .btn-tbl--primary {
+    @apply bg-primary text-white hover:brightness-90;
+  }
+
+  .btn-tbl--success {
+    @apply bg-success text-white;
+  }
+
+  .btn-tbl--muted {
+    @apply bg-ink-faint text-ink-secondary hover:bg-ink-muted hover:text-white;
+  }
+
+  .btn-tbl--danger {
+    @apply bg-danger text-white hover:brightness-90;
+  }
+
+  .btn-tbl--warning {
+    @apply bg-warning text-white hover:brightness-90;
+  }
+}

@@ -1,0 +1,132 @@
+<div id="point-sales-content" class="pb-10">
+
+  <div class="px-3 pt-3 pb-2 flex items-center gap-2">
+    <select id="ps_bulan" class="mat-input flex-1"></select>
+    <select id="ps_year" class="mat-input flex-1"></select>
+  </div>
+
+  <div class="px-3 pb-4">
+    <div class="card-surface overflow-hidden">
+      <div class="tbl-wrap">
+        <table class="tbl-dark tbl-bordered" style="min-width:360px;">
+          <thead>
+            <tr>
+              <th class="td-left">Nama</th>
+              <th class="td-center">Total</th>
+              <th class="td-center">Point</th>
+            </tr>
+          </thead>
+          <tbody id="ps_table_body">
+            <tr>
+              <td colspan="3" class="tbl-empty">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Info Sales (nama/hp/alamat) -->
+  <div id="popup-detail-sales-admin"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-sm sm:rounded-lg rounded-t-lg overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint">
+        <div class="font-bold text-ink-primary">Info Sales</div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div class="p-4 space-y-2 text-sm">
+        <p><span class="font-semibold text-ink-secondary">Nama:</span> <span id="dsa_nama">-</span></p>
+        <p><span class="font-semibold text-ink-secondary">No Hp:</span> <span id="dsa_hp">-</span></p>
+        <p><span class="font-semibold text-ink-secondary">Alamat:</span> <span id="dsa_alamat">-</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Point per karyawan (list SPK) -->
+  <div id="popup-point-detail"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-3xl sm:rounded-lg rounded-t-lg h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+        <div class="font-bold text-ink-primary text-sm">Point Penjualan: <span id="pd_karyawan_nama"></span></div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div class="tbl-wrap p-3" style="max-height:none;">
+        <table class="tbl-dark tbl-bordered" style="min-width:760px;">
+          <thead>
+            <tr>
+              <th class="td-center" style="width:32px;">No</th>
+              <th class="td-center">Tgl</th>
+              <th class="td-center">SPK</th>
+              <th class="td-left">Perusahaan</th>
+              <th class="td-center">Nilai Jual</th>
+              <th class="td-center">%</th>
+              <th class="td-center">Total</th>
+              <th class="td-center">Valid</th>
+            </tr>
+          </thead>
+          <tbody id="pd_table_body">
+            <tr>
+              <td colspan="8" class="tbl-empty">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Detail SPK (produk & logo customer) -->
+  <div id="popup-spk-detail"
+    class="app-popup hidden fixed inset-0 z-[110] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+        <div class="font-bold text-ink-primary">Detail SPK</div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div id="spk_detail_body" class="p-3 space-y-3">
+        <p class="tbl-empty">Memuat data...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Validasi Client (cari + valid/reject) -->
+  <div id="popup-validasi-client"
+    class="app-popup hidden fixed inset-0 z-[110] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+        <div class="font-bold text-ink-primary">Validasi Client</div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div class="p-3 space-y-3">
+        <input type="hidden" id="vc_penjualan_id" />
+        <input type="hidden" id="vc_client_id" />
+        <input type="hidden" id="vc_persentase" />
+
+        <div class="card-surface p-3 flex gap-3">
+          <img id="vc_logo" class="w-16 h-16 object-contain rounded flex-shrink-0" src="" alt="Logo client" />
+          <div class="min-w-0">
+            <p class="font-bold text-ink-primary text-sm truncate" id="vc_nama">-</p>
+            <p class="text-xs text-ink-secondary mt-1" id="vc_alamat">-</p>
+          </div>
+        </div>
+
+        <div class="search-input-wrap">
+          <input id="vc_search" type="text" placeholder="Cari nama client..." class="search-input" />
+          <svg class="search-icon w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+        </div>
+        <div id="vc_results" class="space-y-2 max-h-60 overflow-y-auto">
+          <p class="tbl-empty">Ketik minimal 2 karakter untuk mencari...</p>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button id="vc_btn_valid" class="btn-action btn-action--success flex-1">VALID</button>
+          <button id="vc_btn_reject" class="btn-action btn-action--danger flex-1">REJECT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

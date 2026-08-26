@@ -1,0 +1,114 @@
+<div id="finance-payment-content" class="pb-10">
+
+  <div class="px-3 pt-3 pb-2 flex items-center gap-2">
+    <div class="search-input-wrap flex-1">
+      <input id="pay_search" type="text" placeholder="Cari Perusahaan / Sales" class="search-input" />
+      <svg class="search-icon w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </svg>
+    </div>
+    <select id="pay_status_filter" class="mat-input" style="width:auto;">
+      <option value="0">Unvalid</option>
+      <option value="1">Valid</option>
+    </select>
+    <button id="pay_refresh" class="icon-btn flex-shrink-0" title="Muat Ulang">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10" />
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="px-3 pb-4">
+    <div class="flex items-center justify-between mb-1.5 px-0.5">
+      <p class="section-title text-sm">Data | <span class="section-count" id="pay_count">0</span></p>
+    </div>
+    <div class="card-surface overflow-hidden">
+      <div class="tbl-wrap">
+        <table class="tbl-dark" style="min-width:900px;">
+          <thead>
+            <tr>
+              <th class="td-center" style="width:32px;">No</th>
+              <th class="td-center">Tanggal</th>
+              <th class="td-center">SPK</th>
+              <th class="td-left">Client</th>
+              <th class="td-left">Sales</th>
+              <th class="td-center">Status</th>
+              <th class="td-center">Jumlah</th>
+              <th class="td-left">Ket</th>
+              <th class="td-center">Bank</th>
+              <th class="td-center">Opsi</th>
+            </tr>
+          </thead>
+          <tbody id="pay_table_body">
+            <tr>
+              <td colspan="10" class="tbl-empty">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="pay_pagination" class="pt-2"></div>
+  </div>
+
+  <!-- ===================== Popup Info Client ===================== -->
+  <div id="popup-payment-alamat"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-sm sm:rounded-lg rounded-t-lg overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint">
+        <div class="font-bold text-ink-primary">Info Client</div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div class="p-4 space-y-2 text-sm">
+        <p><span class="font-semibold text-ink-secondary">Nama:</span> <span id="pay_alamat_nama">-</span></p>
+        <p><span class="font-semibold text-ink-secondary">No Hp:</span> <span id="pay_alamat_telp">-</span></p>
+        <p><span class="font-semibold text-ink-secondary">PIC:</span> <span id="pay_alamat_cp">-</span></p>
+        <p><span class="font-semibold text-ink-secondary">Alamat:</span> <span id="pay_alamat_alamat">-</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== Popup Info Sales ===================== -->
+  <div id="popup-payment-sales"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-sm sm:rounded-lg rounded-t-lg overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint">
+        <div class="font-bold text-ink-primary">Data Sales</div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div class="p-4 space-y-2 text-sm">
+        <p><span class="font-semibold text-ink-secondary">Nama:</span> <span id="pay_sales_nama">-</span></p>
+        <p><span class="font-semibold text-ink-secondary">No Hp:</span> <span id="pay_sales_hp">-</span></p>
+        <p><span class="font-semibold text-ink-secondary">Alamat:</span> <span id="pay_sales_alamat">-</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== Popup Validasi Pembayaran (Unvalid -> Valid) ===================== -->
+  <div id="popup-payment-validasi"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+        <div class="font-bold text-ink-primary text-sm">Validasi Pembayaran</div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div id="pay_validasi_body" class="p-3 space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ===================== Popup Unvalid / Reset Pembayaran (Valid -> Unvalid) ===================== -->
+  <div id="popup-payment-unvalid"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+        <div class="font-bold text-ink-primary text-sm">Detail Validasi Pembayaran</div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div id="pay_unvalid_body" class="p-3 space-y-3"></div>
+    </div>
+  </div>
+
+</div>
