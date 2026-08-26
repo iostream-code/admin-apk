@@ -50,5 +50,5 @@
          cordova-plugin-firebasex (notifikasi FCM, lihat NotificationManager di
          admin-finance-apk/www/js/notification.js). Belum ditambah di sini supaya
          scaffold awal ini tetap minimal sampai halaman yang membutuhkannya benar-benar
-         diporting -- lihat README.md "Status Migrasi". -->
+         diporting, lihat README.md "Status Migrasi". -->
 </widget>
