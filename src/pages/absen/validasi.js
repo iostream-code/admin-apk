@@ -210,8 +210,17 @@ export function mount(container) {
           const idx = rowsData.push({ val, hasil }) - 1;
 
           let opsi = '';
-          if (!isLemburEntry && !isEmpty(val.jam_keluar)) {
-            opsi += btnOpsi(idx, hasil.is_lembur ? 'Lembur' : 'Detail', hasil.ada_jam_keluar);
+          if (!isLemburEntry) {
+            // Tombol Detail/Lembur tetap butuh jam_keluar terisi (popup detail
+            // menampilkan foto+lokasi keluar), tapi tombol Izin HARUS tetap
+            // muncul walau belum checkout -- baris presensi hari ini (lihat
+            // OR tanggal_absen=hari-ini di backend getDataAbsenValid()) justru
+            // dikirim FE supaya karyawan yg baru presensi masuk & mau ambil
+            // Ijin Setengah Hari bisa langsung ditandai di sini tanpa nunggu
+            // dia checkout dulu.
+            if (!isEmpty(val.jam_keluar)) {
+              opsi += btnOpsi(idx, hasil.is_lembur ? 'Lembur' : 'Detail', hasil.ada_jam_keluar);
+            }
             opsi += btnIzin(idx);
           }
           if (lemburPasangan && !isLemburEntry && !isEmpty(lemburPasangan.jam_keluar)) {
@@ -279,7 +288,7 @@ export function mount(container) {
   // logic disiplin), FE di sini cuma mengirim flag is_setengah_hari=1.
   function confirmSetengahHari(val) {
     app.dialog.confirm(
-      `⚠️ Yakin tandai ${val.karyawan_nama} sebagai Ijin Setengah Hari?\nGaji pokok akan dipotong 50% dan tidak mendapat uang disiplin (Rp50.000/periode).`,
+      `⚠️ Tandai ${val.karyawan_nama} untuk Ijin Setengah Hari?`,
       () => {
         jQuery.ajax({
           type: 'POST',
