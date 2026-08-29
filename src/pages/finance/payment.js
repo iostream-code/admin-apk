@@ -59,6 +59,29 @@ function isEmpty(v) {
   return v == null || v === 'null' || v === '';
 }
 
+// [UPDATE 2026-08-28 atas permintaan user, lanjutan] Percobaan pertama
+// (lookup value string ke BANK_OPTIONS) TERNYATA TIDAK CUKUP: data live
+// ternyata sering nyimpen `bank_validasi`/`bank_N` sbg ANGKA (bank_id dari
+// tabel master `m_bank`, mis. "3", "1"), bukan nama teks -- beda dari
+// db_dump.sql (offline, agak basi) yg cuma punya baris lama bertipe teks.
+// `m_bank` (`getBankList` di PaymentController, endpoint POST
+// /get-bank-list) adalah master data bank YANG BARU (dt_record 2026-01-20)
+// dgn bank_label yg sudah gabung nama+rekening+a.n. -- itu yg dipakai utk
+// resolve value ANGKA. Utk value TEKS lama (mis. "Mandiri", "BCA") tetap
+// lookup ke BANK_OPTIONS spt sebelumnya (BANK_OPTIONS TIDAK diganti sumbernya
+// ke m_bank krn dipakai jg utk pilihan & aturan wajib-upload-bukti-mutasi di
+// popup Validasi -- lihat toggleUploadSection() -- di luar scope perubahan
+// tampilan ini). `bankById` (map bank_id -> label) diisi oleh
+// loadBankList() di bawah, dipanggil sekali saat mount().
+function getBankLabel(value, bankById) {
+  if (isEmpty(value) || value === '-') return '-';
+  const byOption = BANK_OPTIONS.find((b) => b.value === value);
+  if (byOption) return byOption.label;
+  const byId = bankById && bankById[String(value)];
+  if (byId) return byId;
+  return value;
+}
+
 // [UPDATE 2026-08-26 atas permintaan user, "samakan format penulisan
 // tanggal pada tab Payment sama seperti yg ada pada tab Payable"] Format
 // tanggal DISAMAKAN dgn formatTanggalTransaksi() di pages/finance/payable.js
@@ -84,6 +107,29 @@ export function mount(container) {
   let searchTimeout = null;
   let currentPage = 1;
   let rowsData = []; // seluruh baris HASIL filter pencarian (SEBELUM dipotong per halaman) -- lookup dari data-idx tombol Opsi/Client/Sales -> row, lihat renderTable()
+  let bankById = {}; // map bank_id (m_bank, string key) -> bank_label, diisi loadBankList() -- lihat catatan di getBankLabel()
+
+  // Porting getBankList (PaymentController::getBankList, POST /get-bank-list) --
+  // dipanggil sekali saat mount, HASIL dipakai getBankLabel() utk resolve
+  // bank_validasi/bank_N yg tersimpan sbg bank_id angka. Tabel tetap
+  // dirender (fallback tampilkan raw value) walau fetch ini gagal/lambat --
+  // begitu selesai, re-render halaman aktif supaya label ke-update.
+  function loadBankList() {
+    jQuery.ajax({
+      type: 'POST',
+      url: APP_CONFIG.API_BASE_URL + '/get-bank-list',
+      dataType: 'JSON',
+      success(data) {
+        if (Number(data.status) === 1 && Array.isArray(data.data)) {
+          data.data.forEach((b) => {
+            bankById[String(b.bank_id)] = b.bank_label
+              || `${b.bank_nama || b.bank_kode}${b.bank_no_rekening ? ` (${b.bank_no_rekening}${b.bank_atas_nama ? ` A/N ${b.bank_atas_nama}` : ''})` : ''}`;
+          });
+          renderTable();
+        }
+      },
+    });
+  }
 
   jQuery('#pay_status_filter').on('change', function () {
     validAdmin = Number(jQuery(this).val());
@@ -187,13 +233,13 @@ export function mount(container) {
         <tr class="${rowCls}">
           <td class="td-center">${idx + 1}</td>
           <td class="td-center">${formatDateTime(val.datetime || val.penjualan_tanggal)}</td>
-          <td class="td-center">${spkLabel(val)}</td>
+          <td class="td-left">${spkLabel(val)}</td>
           <td class="td-left btn-pay-client" data-idx="${idx}" style="cursor:pointer;color:#056BBC;">${val.client_nama}</td>
           <td class="td-left btn-pay-sales" data-idx="${idx}" style="cursor:pointer;color:#056BBC;">${val.karyawan_nama}</td>
-          <td class="td-center">${(val.urutan_payment || '').replace('Pembayaran', 'Bayar')}</td>
-          <td class="td-center">${numberFormat(val.jumlah_payment)}</td>
+          <td class="td-left">${(val.urutan_payment || '').replace('Pembayaran', 'Bayar')}</td>
+          <td class="td-right">${numberFormat(val.jumlah_payment)}</td>
           <td class="td-left">${ket}</td>
-          <td class="td-center">${val.bank_validasi || bank}</td>
+          <td class="td-center">${getBankLabel(val.bank_validasi || bank, bankById)}</td>
           <td class="td-center">${opsiBtn}</td>
         </tr>
       `;
@@ -240,9 +286,7 @@ export function mount(container) {
     const val = rowsData[jQuery(this).data('idx')];
     if (!val) return;
     jQuery('#pay_alamat_nama').text(val.client_nama || '-');
-    jQuery('#pay_alamat_telp').text(val.client_telp || '-');
     jQuery('#pay_alamat_cp').text(val.client_cp || '-');
-    jQuery('#pay_alamat_alamat').text(val.client_alamat || '-');
     app.popup.open('#popup-payment-alamat');
   });
 
@@ -442,7 +486,7 @@ export function mount(container) {
   function openPopupUnvalid(val) {
     const isiFoto = val[val.foto_urutan];
     const fotoSrc = !isEmpty(isiFoto) ? IMAGE_BASE + '/foto_pembayaran/' + isiFoto : IMAGE_BASE + '/noimage.jpg';
-    const bankRekening = val.bank_validasi || '-';
+    const bankRekening = getBankLabel(val.bank_validasi, bankById);
     const isMandiriKopra = val.bank_validasi === 'Mandiri Kopra';
 
     let buktiMutasiHtml = '';
@@ -543,6 +587,7 @@ export function mount(container) {
     );
   }
 
+  loadBankList();
   loadDataNotif();
 
   return function unmount() {

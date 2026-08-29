@@ -271,6 +271,10 @@ body {
     text-align: left;
   }
 
+  .td-right {
+    text-align: right;
+  }
+
   /* Ditambah 2026-08-26 saat porting Point Sales/Produksi (form popup Kirim
      Alamat/Validasi Client, tombol aksi kolom tabel: Kirim/Detail/Valid) --
      nama & bentuk disamakan dgn mat-label/mat-input/btn-tbl-- inventory-apk. */
