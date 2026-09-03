@@ -65,4 +65,76 @@
     </div>
   </div>
 
+  <!-- ================ Popup Izin Setengah Hari ================ -->
+  <!-- [BARU 2026-09-03 atas permintaan user, "tambahkan aksi utk upload
+       surat ijin setengah hari"] Menggantikan app.dialog.confirm() polos
+       sebelumnya -- popup baru krn butuh <input type="file"> yg tidak bisa
+       ditaruh di dialog text-only. Upload OPSIONAL (lihat catatan lengkap
+       di confirmSetengahHari()/submitSetengahHari() JS & simpanValid()
+       backend) -- tombol submit TETAP aktif walau tidak pilih file. -->
+  <div id="popup-izin-setengah-hari"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+        <div class="font-bold text-ink-primary text-sm">Ijin Setengah Hari <span id="sh_nama"></span></div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div class="p-4 space-y-3">
+        <p class="text-xs text-ink-secondary">⚠️ Gaji pokok hari ini akan dipotong 50%. Lampirkan foto/scan surat pernyataan karyawan kalau ada (opsional).</p>
+        <div>
+          <!-- [FIX 2026-09-03, sama spt dp_dokumen_keterangan] input file
+               asli disembunyikan, dipicu via <label> bergaya tombol --
+               class "mat-input" sebelumnya bikin tombol native file input
+               tampil rusak/tidak rapi. -->
+          <label class="block text-xs text-ink-secondary mb-1" for="sh_dokumen">Surat Pernyataan (opsional)</label>
+          <input type="file" id="sh_dokumen" accept="image/*,.pdf" class="hidden" />
+          <label for="sh_dokumen" class="btn-action btn-action--primary block text-center cursor-pointer">📎 Pilih Surat Pernyataan</label>
+          <p id="sh_dokumen_filename" class="text-xs text-ink-muted mt-1"></p>
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button id="sh_btn_batal" class="btn-action flex-1">Batal</button>
+          <button id="sh_btn_submit" class="btn-action btn-action--success flex-1">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================ Popup Surat Keterangan Terlambat ================ -->
+  <!-- [FIX 2026-09-03 atas laporan user, "button telat sepertinya
+       bermasalah"] SEBELUMNYA pakai app.dialog.create()/app.dialog.prompt()
+       -- KEDUANYA TIDAK ADA di shim dialog.js app ini (cuma preloader/
+       alert/confirm/close, lihat src/lib/dialog.js), jadi klik tombol
+       "Telat" pasti error "app.dialog.create is not a function". Diganti
+       popup kustom, pola sama persis dgn #popup-izin-setengah-hari. -->
+  <div id="popup-surat-terlambat"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+        <div class="font-bold text-ink-primary text-sm">Surat Keterangan Terlambat <span id="st_nama"></span></div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div class="p-4 space-y-3">
+        <p class="text-xs text-ink-secondary">Pilih tindak lanjut sesuai surat pernyataan karyawan:</p>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2 text-sm p-2 border border-ink-faint rounded-md cursor-pointer">
+            <input type="radio" name="st_mode" value="hapus_telat" checked />
+            <span>Hapus Status Telat (potongan telat dihapus)</span>
+          </label>
+          <label class="flex items-center gap-2 text-sm p-2 border border-ink-faint rounded-md cursor-pointer">
+            <input type="radio" name="st_mode" value="setengah_hari" />
+            <span>Setengah Hari (gaji dipotong 50%)</span>
+          </label>
+        </div>
+        <div>
+          <label class="mat-label" for="st_catatan">Catatan (opsional)</label>
+          <input type="text" id="st_catatan" class="mat-input w-full" placeholder="Catatan..." />
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button id="st_btn_batal" class="btn-action flex-1">Batal</button>
+          <button id="st_btn_submit" class="btn-action btn-action--success flex-1">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
