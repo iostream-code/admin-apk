@@ -1,0 +1,107 @@
+<div id="finance-sales-content" class="pb-10">
+
+  <div class="px-3 pt-3 pb-2 flex items-center gap-2">
+    <div class="search-input-wrap flex-1">
+      <input id="fs_search" type="text" placeholder="Cari Nama Sales" class="search-input" />
+      <svg class="search-icon w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </svg>
+    </div>
+    <select id="fs_bulan" class="mat-input" style="width:auto;"></select>
+    <select id="fs_tahun" class="mat-input" style="width:auto;"></select>
+  </div>
+
+  <div class="px-3 pb-2 flex items-center justify-between gap-2">
+    <p class="section-title text-sm">Data | <span class="section-count text-sm" id="fs_count">0</span></p>
+    <div class="flex items-center gap-1.5 flex-shrink-0">
+      <!-- [BARU 2026-09-09 atas permintaan user, "tambahkan juga fitur popup
+           operasional sales seperti yg ada di admin-finance-apk", lalu
+           "tambahkan saja button disamping button refresh untuk trigger
+           popupnya"] lihat pages/finance/operasionalSales.js. -->
+      <button id="fs_btn_operasional" class="icon-btn w-8 h-8 flex-shrink-0" title="Operasional Sales">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+          <line x1="1" y1="10" x2="23" y2="10" />
+        </svg>
+      </button>
+      <button id="fs_refresh" class="icon-btn w-8 h-8 flex-shrink-0" title="Muat Ulang">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10" />
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="px-3 pb-4">
+    <div class="card-surface overflow-hidden">
+      <div class="tbl-wrap">
+        <table class="tbl-dark" style="min-width:560px;">
+          <thead>
+            <tr>
+              <th class="td-center" style="width:32px;">No</th>
+              <th class="td-center">Tanggal</th>
+              <th class="td-left">Sales</th>
+              <th class="td-center">Kunjungan</th>
+              <th class="td-center">Status</th>
+              <th class="td-center">Opsi</th>
+            </tr>
+          </thead>
+          <tbody id="fs_table_body">
+            <tr>
+              <td colspan="6" class="tbl-empty">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Detail Kunjungan + Klaim Uang Saku -->
+  <div id="popup-fs-detail"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+        <div class="font-bold text-ink-primary text-sm">Detail Kunjungan</div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div class="p-3 space-y-3">
+        <div class="card-surface p-3 flex items-center gap-3">
+          <div id="fsd_daybox" class="w-11 h-11 rounded-lg flex flex-col items-center justify-center flex-shrink-0 text-white bg-warning">
+            <span id="fsd_day" class="text-base font-bold leading-none">-</span>
+            <span id="fsd_month" class="text-[10px] font-semibold leading-none mt-0.5">-</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="font-bold text-ink-primary text-sm truncate" id="fsd_tanggal">-</p>
+            <p class="text-xs text-ink-secondary" id="fsd_meta">-</p>
+          </div>
+          <span id="fsd_status" class="text-xs font-semibold px-2 py-1 rounded flex-shrink-0 bg-warning text-white">Pending</span>
+        </div>
+
+        <div class="rounded-lg p-3" style="background:linear-gradient(135deg,#4CAF50,#66bb6a);">
+          <p class="text-[11px] font-semibold text-white/90 uppercase tracking-wide mb-1">Nominal Uang Saku (bisa diubah)</p>
+          <div id="fsd_nominal_wrap" class="text-lg font-bold text-white">-</div>
+          <div id="fsd_breakdown" class="mt-2 pt-2 border-t border-white/30 text-[11px] text-white/90"></div>
+        </div>
+
+        <div class="card-surface p-3">
+          <p class="mat-label">🚗 Kendaraan</p>
+          <select id="fsd_vehicle_select" class="mat-input" disabled>
+            <option value="">Memuat daftar kendaraan...</option>
+          </select>
+        </div>
+
+        <div id="fsd_visit_list" class="space-y-3"></div>
+
+        <div id="fsd_foto_section"></div>
+
+        <button id="fsd_btn_validate" class="btn-action btn-action--success w-full">✓ Klaim Uang Saku</button>
+      </div>
+    </div>
+  </div>
+
+</div>

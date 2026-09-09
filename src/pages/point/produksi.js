@@ -45,6 +45,7 @@ import { APP_CONFIG } from '../../lib/config.js';
 import { numberFormat } from '../../lib/format.js';
 import { formatDayMonth, spkLabel } from './pointFormat.js';
 import { showAuthedShell } from '../../lib/shell.js';
+import { mountPointFilter } from '../../lib/pointTabs.js';
 
 const IMAGE_BASE = APP_CONFIG.IMAGE_BASE_URL;
 const NOIMAGE = IMAGE_BASE + '/noimage.jpg';
@@ -66,6 +67,7 @@ function hitungPoint(item) {
 export function mount(container) {
   container.innerHTML = tpl;
   showAuthedShell('/point/produksi');
+  mountPointFilter(container, 'produksi');
 
   let searchTimeout = null;
   let allRows = []; // seluruh baris hasil fetch bulan/tahun (SEBELUM filter cabang)
@@ -91,7 +93,7 @@ export function mount(container) {
   function loadPointProduksi() {
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/download-point-produksi',
+      url: APP_CONFIG.API_BASE_URL + '/point/download-point-produksi',
       dataType: 'JSON',
       data: { month: $bulan.val(), year: $year.val() },
       beforeSend() {
@@ -207,7 +209,7 @@ export function mount(container) {
   function loadClientsByKeyword(keyword) {
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/get-all-clients',
+      url: APP_CONFIG.API_BASE_URL + '/point/get-all-clients',
       dataType: 'JSON',
       data: {
         perusahaan_penjualan_value: keyword || 'empty',
@@ -264,7 +266,7 @@ export function mount(container) {
 
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/update-validasi-client',
+      url: APP_CONFIG.API_BASE_URL + '/point/update-validasi-client',
       dataType: 'JSON',
       data: {
         penjualan_id: penjualanId,

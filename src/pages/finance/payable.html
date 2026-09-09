@@ -23,42 +23,50 @@
     </div>
   </div>
 
+  <!-- [BARU 2026-09-07 atas permintaan user, "filter pada tab Payable
+       jadikan satu baris saja agar lebih hemat ruang"] Kas/Bulan/Tahun
+       SEBELUMNYA 2 baris terpisah (Kas sendiri, Bulan+Tahun sendiri) --
+       digabung jadi 1 baris. -->
   <div class="px-3 pb-2 flex items-center gap-2">
-    <select id="payable_filter_kas" class="mat-input flex-1">
+    <select id="payable_filter_kas" class="mat-input flex-1" style="min-width:0;">
       <option value="">Memuat kas...</option>
     </select>
-    <button id="payable_refresh" class="icon-btn flex-shrink-0" title="Muat Ulang">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="23 4 23 10 17 10" />
-        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-      </svg>
-    </button>
-  </div>
-
-  <div class="px-3 pb-2 flex items-center gap-2">
-    <select id="payable_filter_bulan" class="mat-input flex-1">
+    <select id="payable_filter_bulan" class="mat-input flex-1" style="min-width:0;">
       <option value="all">All Bulan</option>
     </select>
-    <select id="payable_filter_tahun" class="mat-input flex-1">
+    <select id="payable_filter_tahun" class="mat-input flex-1" style="min-width:0;">
       <option value="all">All Tahun</option>
     </select>
   </div>
 
-  <div class="px-3 pb-4">
-    <div class="flex items-center justify-between mb-1.5 px-0.5">
-      <p class="section-title text-sm">Data | <span class="section-count" id="payable_count">0</span></p>
+  <!-- [STANDARISASI 2026-09-07] Sama pola dgn absen/validasi.html -- lihat
+       catatan lengkap di sana. `payable_refresh` PINDAH dari baris filter Kas
+       ke sini (semua tombol toolbar berkumpul di 1 baris, urutan: aksi
+       kontekstual dulu baru Muat Ulang, sama konvensi finance-v2-apk/
+       pages/absen/gaji.js). -->
+  <div class="px-3 pb-2 flex items-center justify-between gap-2">
+    <p class="section-title text-sm">Data | <span class="section-count text-sm" id="payable_count">0</span></p>
+    <div class="flex items-center gap-1.5 flex-shrink-0">
       <!-- Tombol Upload Bukti Transfer/Nota -- HANYA tampil saat filter Kas
            sedang di "Kas Kecil" (lihat toggleUploadBuktiButton() di
-           payable.js). Sejajar dgn section-title, ikon saja (atas permintaan
-           user 2026-08-26). -->
-      <button id="payable_btn_upload_bukti" class="icon-btn icon-btn--primary hidden" title="Upload Bukti Transfer / Nota Pembayaran">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           payable.js, atas permintaan user 2026-08-26). -->
+      <button id="payable_btn_upload_bukti" class="icon-btn icon-btn--primary w-8 h-8 flex-shrink-0 hidden" title="Upload Bukti Transfer / Nota Pembayaran">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
         </svg>
       </button>
+      <button id="payable_refresh" class="icon-btn w-8 h-8 flex-shrink-0" title="Muat Ulang">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10" />
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+        </svg>
+      </button>
     </div>
+  </div>
+
+  <div class="px-3 pb-4">
     <div class="card-surface overflow-hidden">
       <div class="tbl-wrap">
         <table class="tbl-dark" style="min-width:640px;">
@@ -116,6 +124,20 @@
         </div>
         <button id="pb_btn_submit" class="btn-action btn-action--success w-full mt-1">Simpan Transaksi</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===================== Popup Detail Transaksi (BARU 2026-09-09 atas
+       permintaan user, "pada Finance>Kas tetap bisa melihat detail
+       transaksi kas termasuk fotonya") ===================== -->
+  <div id="popup-payable-detail"
+    class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+    <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+        <div class="font-bold text-ink-primary text-sm">Detail Transaksi</div>
+        <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+      </div>
+      <div id="payabled_body" class="p-3 space-y-3 text-sm"></div>
     </div>
   </div>
 

@@ -312,4 +312,27 @@ body {
   .btn-tbl--warning {
     @apply bg-warning text-white hover:brightness-90;
   }
+
+  /* [BARU 2026-09-07 atas permintaan user, "pastikan untuk semua fitur
+     preview gambar di semua menu punya fitur untuk zoom in/out dan rotate"]
+     Toolbar kontrol lib/photobrowser.js (tombol +/-/putar/reset) -- bulat,
+     translucent putih di atas backdrop gelap lightbox, konsisten sama gaya
+     tombol tutup (`text-white`) yang sudah ada di sana sebelumnya. */
+  .pb-ctrl-btn {
+    @apply flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition active:scale-95;
+  }
+
+  .pb-ctrl-btn:hover {
+    @apply bg-white/25;
+  }
+
+  /* Transisi HALUS utk perubahan scale/rotate lewat TOMBOL (klik +/-/putar/
+     reset) & toggle double-tap -- DIMATIKAN sementara (inline style,
+     `img.style.transition = 'none'`) selama gesture jari aktif (pinch/drag),
+     supaya gerakan tetap responsif 1:1 mengikuti jari tanpa lag, lalu
+     dinyalakan lagi begitu jari diangkat -- lihat pointerdown/endPointer()
+     di lib/photobrowser.js. */
+  .pb-img {
+    transition: transform 0.15s ease-out;
+  }
 }

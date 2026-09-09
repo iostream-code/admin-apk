@@ -79,7 +79,7 @@ export function mount(container) {
   function loadDataValidIjin() {
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/hrm/ijin/data-hrd',
+      url: APP_CONFIG.API_BASE_URL + '/ijin/data-hrd',
       dataType: 'JSON',
       data: { status: 'pending' },
       beforeSend() {
@@ -192,7 +192,7 @@ export function mount(container) {
     app.dialog.confirm('Konfirmasi bahwa Anda telah mengetahui pengajuan ijin ini?', () => {
       jQuery.ajax({
         type: 'POST',
-        url: APP_CONFIG.API_BASE_URL + '/hrm/ijin/update-validasi',
+        url: APP_CONFIG.API_BASE_URL + '/ijin/update-validasi',
         dataType: 'JSON',
         data: {
           id_ijin: idIjin,

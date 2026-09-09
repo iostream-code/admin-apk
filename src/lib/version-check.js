@@ -1,9 +1,12 @@
 // Cek versi app -- porting dari admin-finance-apk/www/js/global.js
-// (checkAppVersion(), dipanggil tiap 30 detik lewat setInterval). Endpoint
-// & payload SAMA PERSIS dgn aslinya: POST {BASE_API}/config/check-version,
-// { app_name: 'admin', current_version_code }, TANPA prefix modul apa pun
-// (beda dari inventory-apk/ekspedisi-apk yg backend-migrasinya pakai prefix
-// '/inventory'+'/config/check-version' dst -- app ini tetap backend-production).
+// (checkAppVersion(), dipanggil tiap 30 detik lewat setInterval). Payload
+// SAMA PERSIS dgn aslinya ({ app_name: 'admin', current_version_code }).
+// [CUTOVER 2026-09-07] URL-nya TIDAK berubah di sini (API_BASE_URL + path
+// polos) -- API_BASE_URL SENDIRI yang sekarang sudah termasuk '/admin'
+// (lihat config.js), jadi otomatis jadi '.../admin/config/check-version',
+// sama pola prefix dgn inventory-apk/ekspedisi-apk sekarang (BEDA dari
+// sebelumnya, app ini TIDAK lagi tetap backend-production). Endpoint baru
+// App\Admin\Controllers\ConfigController::checkVersion() (backend-migrasi).
 //
 // Sekaligus dipakai sbg indikator koneksi (#box_internet) -- pola sama dgn
 // ekspedisi-apk/inventory-apk: berhasil/gagalnya request check-version yang

@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "807706982340",
-    "project_id": "koperindo-id-int",
-    "storage_bucket": "koperindo-id-int.firebasestorage.app"
+    "project_number": "105669788025",
+    "project_id": "migrasi-internal",
+    "storage_bucket": "migrasi-internal.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:807706982340:android:a786fe5b4f38eac192d691",
+        "mobilesdk_app_id": "1:105669788025:android:be21598bbc8764d1286fa8",
         "android_client_info": {
-          "package_name": "com.produksi13.vertice"
+          "package_name": "com.koperindo.admin"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCEOPVGn_ePp72k8_8lO8zaIHeT6ijl9xI"
+          "current_key": "AIzaSyCNTejGERzUkC3eaLliUGQke_rnmlzmpuE"
         }
       ],
       "services": {
@@ -26,110 +26,15 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:807706982340:android:1018ad71dea0403392d691",
+        "mobilesdk_app_id": "1:105669788025:android:838cccb0ecebc1f1286fa8",
         "android_client_info": {
-          "package_name": "io.cordova.admin_tasindo"
+          "package_name": "com.koperindo.finance"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCEOPVGn_ePp72k8_8lO8zaIHeT6ijl9xI"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:807706982340:android:e82cea98c356d41b92d691",
-        "android_client_info": {
-          "package_name": "io.cordova.ass_admin_tasindo"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCEOPVGn_ePp72k8_8lO8zaIHeT6ijl9xI"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:807706982340:android:99b7d20d51538e3d92d691",
-        "android_client_info": {
-          "package_name": "io.cordova.crmsurabaya"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCEOPVGn_ePp72k8_8lO8zaIHeT6ijl9xI"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:807706982340:android:88eecc33c10735ee92d691",
-        "android_client_info": {
-          "package_name": "io.cordova.operasional_tasindo"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCEOPVGn_ePp72k8_8lO8zaIHeT6ijl9xI"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:807706982340:android:36c520132e85be1592d691",
-        "android_client_info": {
-          "package_name": "io.cordova.paymentinvoicetasindo"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCEOPVGn_ePp72k8_8lO8zaIHeT6ijl9xI"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:807706982340:android:94869d8c12b8803492d691",
-        "android_client_info": {
-          "package_name": "io.cordova.salessurabaya"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCEOPVGn_ePp72k8_8lO8zaIHeT6ijl9xI"
+          "current_key": "AIzaSyCNTejGERzUkC3eaLliUGQke_rnmlzmpuE"
         }
       ],
       "services": {

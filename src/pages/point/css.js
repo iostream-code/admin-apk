@@ -1,30 +1,21 @@
-// Point Sales -- porting dari admin-finance-apk/www/js/point_sales.js
-// (getSalesAdmin/pointSales/detailPenjualanOwner/kirimAlamatSales/
-// openValidasiClientPopup/dst) + point_sales.html.
-//
-// SCOPE PASS INI (disepakati dgn user 2026-08-26): data inti saja --
-// tabel Sales Admin + filter bulan/tahun, drill-down Point per karyawan
-// (list SPK + total), detail SPK (produk + logo customer), validasi client
-// (cari + valid/reject, TANPA tombol WhatsApp). BELUM diporting (butuh
-// plugin native, tidak bisa diuji di browser): upload foto bukti bayar/
-// pelunasan (kamera), download/share PDF rekap. Tombol/menu utk fitur itu
-// SENGAJA tidak ditampilkan sama sekali di sini (bukan cuma disembunyikan)
-// -- lihat riwayat git admin-finance-apk kalau perlu ditelusuri lagi.
-//
-// [DIHAPUS 2026-08-26 atas permintaan user, "pada menu point seharusnya
-// tidak ada fitur untuk mengatur pengiriman apapun"] Tombol "Kirim" +
-// popup Input Alamat (porting kirimAlamatSales()) DIBUANG TOTAL dari
-// halaman ini -- bukan cuma disembunyikan. Endpoint `/get-data-Alamat`
-// TIDAK dipanggil sama sekali lagi di sini.
+// Point CSS -- [BARU 2026-09-07 atas permintaan user, "tambahkan tab CSS
+// juga pada menu Point"] SALINAN dari pages/point/sales.js dgn endpoint
+// diganti ke varian -css (get-sales-css/download-point-css, whitelist
+// hardcode user_id 382/391 -- BUKAN filter posisi, lihat docblock
+// App\Admin\Controllers\PointController::getSalesCss() backend-migrasi),
+// pola SAMA PERSIS dgn finance-v2-apk/src/pages/point/css.js (REUSE dari
+// sales.js, bukan port ulang dari nol -- semua catatan scope di sales.js
+// berlaku SAMA PERSIS di sini: data inti saja, TANPA tombol WhatsApp di
+// popup Validasi Client, TANPA fitur kirim alamat/upload foto/PDF).
 
-import tpl from './sales.html?raw';
+import tpl from './css.html?raw';
 import { APP_CONFIG } from '../../lib/config.js';
 import { numberFormat } from '../../lib/format.js';
 import { formatDayMonth, spkLabel } from './pointFormat.js';
 import { showAuthedShell } from '../../lib/shell.js';
 import { mountPointFilter } from '../../lib/pointTabs.js';
 
-const IMAGE_BASE = APP_CONFIG.IMAGE_BASE_URL; // 'https://indokoper.com' -- porting BASE_PATH_IMAGE_CUSTOMER dst
+const IMAGE_BASE = APP_CONFIG.IMAGE_BASE_URL;
 const NOIMAGE = IMAGE_BASE + '/noimage.jpg';
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -32,42 +23,36 @@ const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
 
 export function mount(container) {
   container.innerHTML = tpl;
-  showAuthedShell('/point/sales');
-  mountPointFilter(container, 'sales');
+  showAuthedShell('/point/css');
+  mountPointFilter(container, 'css');
 
-  // State per-sesi halaman ini (pengganti hidden input #karyawan_id_hidden/
-  // #karyawan_nama_hidden admin-finance-apk asli) -- karyawan yang sedang
-  // dibuka detail Point-nya, dipakai lagi oleh loadClientsByKeyword() &
-  // reload setelah validasi.
   let currentKaryawanId = null;
   let currentKaryawanNama = null;
   let searchTimeout = null;
 
-  const $bulan = jQuery('#ps_bulan');
-  const $year = jQuery('#ps_year');
+  const $bulan = jQuery('#pc_bulan');
+  const $year = jQuery('#pc_year');
 
-  // ===== Isi dropdown Bulan (porting getBulanPointSales()) =====
-  const nowMonth = new Date().getMonth(); // 0-based
+  const nowMonth = new Date().getMonth();
   BULAN.forEach((nama, i) => {
     $bulan.append(jQuery('<option>').val(i + 1).text(nama).prop('selected', i === nowMonth));
   });
 
-  // ===== Isi dropdown Tahun (porting getYearSalesAdmin()) =====
   const endYear = new Date().getFullYear();
   for (let y = endYear; y > 2010; y--) {
     $year.append(jQuery('<option>').val(y).text(y).prop('selected', y === endYear));
   }
 
-  $bulan.on('change', loadSalesAdmin);
-  $year.on('change', loadSalesAdmin);
+  $bulan.on('change', loadSalesCss);
+  $year.on('change', loadSalesCss);
 
   // ===========================================================
-  // Tabel utama: Sales Admin (Nama, Total, tombol Point)
+  // Tabel utama: Sales CSS (Nama, Total, tombol Point)
   // ===========================================================
-  function loadSalesAdmin() {
+  function loadSalesCss() {
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/point/get-sales-admin',
+      url: APP_CONFIG.API_BASE_URL + '/point/get-sales-css',
       dataType: 'JSON',
       data: {
         karyawan_id: localStorage.getItem('user_id'),
@@ -75,12 +60,12 @@ export function mount(container) {
         year: $year.val(),
       },
       beforeSend() {
-        jQuery('#ps_table_body').html('<tr><td colspan="3" class="tbl-empty">Memuat data...</td></tr>');
+        jQuery('#pc_table_body').html('<tr><td colspan="3" class="tbl-empty">Memuat data...</td></tr>');
       },
       success(data) {
         const rows = data.data || [];
         if (!rows.length) {
-          jQuery('#ps_table_body').html('<tr><td colspan="3" class="tbl-empty">Tidak ada data.</td></tr>');
+          jQuery('#pc_table_body').html('<tr><td colspan="3" class="tbl-empty">Tidak ada data.</td></tr>');
           return;
         }
 
@@ -99,15 +84,15 @@ export function mount(container) {
           `;
         }).join('');
 
-        jQuery('#ps_table_body').html(html);
+        jQuery('#pc_table_body').html(html);
       },
       error() {
-        jQuery('#ps_table_body').html('<tr><td colspan="3" class="tbl-empty">Gagal memuat data.</td></tr>');
+        jQuery('#pc_table_body').html('<tr><td colspan="3" class="tbl-empty">Gagal memuat data.</td></tr>');
       },
     });
   }
 
-  jQuery('#ps_table_body').on('click', '.btn-nama-sales', function () {
+  jQuery('#pc_table_body').on('click', '.btn-nama-sales', function () {
     const $el = jQuery(this);
     jQuery('#dsa_nama').text($el.data('nama'));
     jQuery('#dsa_hp').text($el.data('hp'));
@@ -115,7 +100,7 @@ export function mount(container) {
     app.popup.open('#popup-detail-sales-admin');
   });
 
-  jQuery('#ps_table_body').on('click', '.btn-point', function () {
+  jQuery('#pc_table_body').on('click', '.btn-point', function () {
     currentKaryawanId = jQuery(this).data('kid');
     currentKaryawanNama = jQuery(this).data('kname');
     jQuery('#pd_karyawan_nama').text(currentKaryawanNama);
@@ -124,12 +109,12 @@ export function mount(container) {
   });
 
   // ===========================================================
-  // Popup Point per karyawan: list SPK (porting pointSales())
+  // Popup Point per karyawan: list SPK
   // ===========================================================
   function loadPointDetail() {
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/point/download-point-admin',
+      url: APP_CONFIG.API_BASE_URL + '/point/download-point-css',
       dataType: 'JSON',
       data: {
         karyawan_id: currentKaryawanId,
@@ -199,7 +184,7 @@ export function mount(container) {
   }
 
   // ===========================================================
-  // Popup Detail SPK: produk + logo customer (porting detailPenjualanOwner())
+  // Popup Detail SPK: produk + logo customer
   // ===========================================================
   jQuery('#pd_table_body').on('click', '.btn-spk-detail', function () {
     const penjualanId = jQuery(this).data('penjualan-id');
@@ -283,9 +268,7 @@ export function mount(container) {
   });
 
   // ===========================================================
-  // Popup Validasi Client (porting openValidasiClientPopup/searchClientValidasi/
-  // loadClientsByKeyword/validasiClientAction/processValidasiClient).
-  // TANPA tombol WhatsApp (disepakati, lihat catatan scope di atas).
+  // Popup Validasi Client
   // ===========================================================
   jQuery('#pd_table_body').on('click', '.btn-validasi', function () {
     const $el = jQuery(this);
@@ -304,9 +287,6 @@ export function mount(container) {
     app.popup.open('#popup-validasi-client');
   });
 
-  // 'input' (bukan 'keyup' spt onkeyup="searchClientValidasi()" di
-  // admin-finance-apk asli) -- supaya paste/autofill/IME ikut memicu
-  // pencarian, tidak cuma keystroke fisik.
   jQuery('#vc_search').on('input', function () {
     const keyword = jQuery(this).val().trim();
     if (searchTimeout) clearTimeout(searchTimeout);
@@ -422,7 +402,7 @@ export function mount(container) {
     return text.length <= maxLength ? text : text.substring(0, maxLength) + '...';
   }
 
-  loadSalesAdmin();
+  loadSalesCss();
 
   return function unmount() {
     if (searchTimeout) clearTimeout(searchTimeout);

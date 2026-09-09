@@ -1,0 +1,299 @@
+<!-- Popup Operasional Sales (list rekap per Sales+Tanggal) -->
+<div id="popup-ops-list" class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+  <div class="app-overlay-panel bg-white w-full sm:max-w-lg sm:rounded-lg rounded-t-lg h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+      <div class="font-bold text-ink-primary text-sm">Operasional Sales</div>
+      <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+    </div>
+    <div class="p-3 space-y-3">
+      <!-- [BARU 2026-09-09, direvisi atas permintaan user, "card saat ini
+           saya butuh Pengeluaran (dari sisi Admin) dan card Terpakai (yg
+           dipakai oleh Sales, atau pengeluaran Sales)"] Rekap cepat dari
+           SELURUH data yang lagi tampil (ikut filter bulan/tahun/nama di
+           bawah, dihitung ulang tiap renderList()):
+             - Pengeluaran (sisi Admin) = total jenis_transaksi='masuk' yg
+               BUKAN kategori_kode='pengembalian' -- uang yg SUDAH dikasihkan
+               admin ke sales (mis. uang_saku), TIDAK termasuk pengembalian
+               (itu uang balik dari sales, bukan pengeluaran baru).
+             - Terpakai (sisi Sales) = total jenis_transaksi='keluar' --
+               uang yg SUDAH dipakai sales utk biaya operasional beneran
+               (transport/konsumsi/penginapan/dst).
+           Selisih (section-title, di bawah) = Pengeluaran - Terpakai = sisa
+           uang yg masih dipegang sales, BELUM di-refund. -->
+      <div class="grid grid-cols-2 gap-2">
+        <div class="card-surface p-2.5">
+          <p class="mat-label">Pengeluaran</p>
+          <p class="text-base font-bold text-danger" id="ops_total_pengeluaran">Rp 0</p>
+        </div>
+        <div class="card-surface p-2.5">
+          <p class="mat-label">Terpakai</p>
+          <p class="text-base font-bold text-info" id="ops_total_terpakai">Rp 0</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <select id="ops_bulan" class="mat-input flex-1"></select>
+        <select id="ops_tahun" class="mat-input flex-1"></select>
+      </div>
+
+      <!-- [UPDATE 2026-09-09 atas permintaan user, "untuk searchbox jadikan
+           button disamping tombol plus saja"] Input pencarian nama sales
+           SEBELUMNYA selalu tampil (baris sendiri, penuh) -- sekarang
+           disembunyikan default, cuma muncul kalau tombol kaca pembesar
+           (#ops_btn_search, di grup tombol bawah, sebelah tombol "+") di-klik. -->
+      <div id="ops_search_row" class="hidden">
+        <div class="search-input-wrap">
+          <input id="ops_search" type="text" placeholder="Cari Nama Sales" class="search-input" />
+          <svg class="search-icon w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between gap-2">
+        <!-- [UPDATE 2026-09-09 atas permintaan user, "untuk selisih cukup
+             seperti format berikut Data | jumlah_data | nominal_selisih"],
+             nilainya = Pengeluaran - Terpakai (lihat 2 card di atas) = sisa
+             uang yg belum di-refund sales, lihat docblock panjang di atas. -->
+        <p class="section-title text-sm">Data | <span class="section-count text-sm" id="ops_count">0</span> | <span id="ops_selisih">Rp 0</span></p>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button id="ops_btn_search" class="icon-btn w-8 h-8 flex-shrink-0" title="Cari">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </button>
+          <button id="ops_btn_add" class="icon-btn icon-btn--primary w-8 h-8 flex-shrink-0" title="Tambah Transaksi">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button id="ops_refresh" class="icon-btn w-8 h-8 flex-shrink-0" title="Muat Ulang">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="card-surface overflow-hidden">
+        <div class="tbl-wrap">
+          <table class="tbl-dark" style="min-width:620px;">
+            <thead>
+              <tr>
+                <th class="td-center" style="width:28px;">No</th>
+                <th class="td-center">Tanggal</th>
+                <th class="td-left">Sales</th>
+                <th class="td-right">Masuk</th>
+                <th class="td-right">Keluar</th>
+                <th class="td-right">Selisih</th>
+                <th class="td-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="ops_table_body">
+              <tr>
+                <td colspan="7" class="tbl-empty">Memuat data...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Popup rincian transaksi 1 grup (Sales + Tanggal) -->
+<div id="popup-ops-group-detail" class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+  <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+      <div class="font-bold text-ink-primary text-sm" id="opsg_title">Rincian Transaksi</div>
+      <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+    </div>
+    <div class="p-3 space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="card-surface p-2.5">
+          <p class="mat-label">Masuk</p>
+          <p class="text-base font-bold text-success" id="opsg_masuk">Rp 0</p>
+        </div>
+        <div class="card-surface p-2.5">
+          <p class="mat-label">Keluar</p>
+          <p class="text-base font-bold text-danger" id="opsg_keluar">Rp 0</p>
+        </div>
+      </div>
+
+      <div class="card-surface overflow-hidden">
+        <div class="tbl-wrap">
+          <table class="tbl-dark" style="min-width:420px;">
+            <thead>
+              <tr>
+                <th class="td-center" style="width:28px;">No</th>
+                <th class="td-center">Tipe</th>
+                <th class="td-left">Kategori</th>
+                <th class="td-right">Nominal</th>
+                <th class="td-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="opsg_table_body">
+              <tr>
+                <td colspan="5" class="tbl-empty">Tidak ada data.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Popup ringkasan (cuma tampil kalau ada transaksi approved) -->
+<div id="popup-ops-summary" class="app-popup hidden fixed inset-0 z-[110] items-end sm:items-center justify-center bg-black/40">
+  <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg overflow-y-auto max-h-[85vh]">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+      <div class="font-bold text-ink-primary text-sm">Ringkasan Operasional Sales</div>
+      <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+    </div>
+    <div class="p-3 space-y-3">
+      <div class="grid grid-cols-3 gap-2">
+        <div class="card-surface p-2.5 text-center">
+          <p class="mat-label">Masuk</p>
+          <p class="text-sm font-bold text-success" id="opss_masuk">Rp 0</p>
+        </div>
+        <div class="card-surface p-2.5 text-center">
+          <p class="mat-label">Keluar</p>
+          <p class="text-sm font-bold text-danger" id="opss_keluar">Rp 0</p>
+        </div>
+        <div id="opss_sisa_card" class="p-2.5 text-center rounded-md bg-success text-white">
+          <p class="text-[11px] font-bold uppercase tracking-wide text-white/90">Sisa</p>
+          <p class="text-sm font-bold" id="opss_sisa">Rp 0</p>
+        </div>
+      </div>
+
+      <div class="card-surface overflow-hidden">
+        <div class="tbl-wrap">
+          <table class="tbl-dark" style="min-width:420px;">
+            <thead>
+              <tr>
+                <th class="td-left">Sales</th>
+                <th class="td-right">Masuk</th>
+                <th class="td-right">Keluar</th>
+                <th class="td-right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="opss_table_body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Popup Tambah Transaksi -->
+<div id="popup-ops-tambah" class="app-popup hidden fixed inset-0 z-[100] items-end sm:items-center justify-center bg-black/40">
+  <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+      <div class="font-bold text-ink-primary text-sm">Tambah Transaksi</div>
+      <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+    </div>
+    <div class="p-3 space-y-3">
+      <div>
+        <label class="mat-label">Sales</label>
+        <div class="flex gap-2">
+          <input id="opst_sales_text" type="text" readonly placeholder="-- Pilih sales --" class="mat-input flex-1" />
+          <button type="button" id="opst_btn_pilih_sales" class="icon-btn !w-auto px-4 text-xs font-bold flex-shrink-0">Pilih</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="mat-label" for="opst_kategori">Kategori</label>
+        <select id="opst_kategori" class="mat-input">
+          <option value="">Memuat kategori...</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="mat-label" for="opst_nominal">Nominal</label>
+        <input id="opst_nominal" type="text" inputmode="numeric" placeholder="0" class="mat-input" />
+      </div>
+
+      <div>
+        <label class="mat-label" for="opst_keterangan">Keterangan (opsional)</label>
+        <textarea id="opst_keterangan" rows="2" class="mat-input" style="height:auto;"></textarea>
+      </div>
+
+      <div>
+        <label class="mat-label">Foto Bukti (opsional)</label>
+        <div id="opst_preview_wrap" class="hidden mb-2 text-center">
+          <img id="opst_preview" class="max-h-40 inline-block rounded border border-ink-faint object-cover cursor-zoom-in" />
+        </div>
+        <input type="file" id="opst_file" accept="image/*" class="hidden" />
+        <label for="opst_file" class="btn-action btn-action--primary block text-center cursor-pointer">Pilih Foto</label>
+        <p id="opst_filename" class="text-xs text-ink-muted mt-1"></p>
+      </div>
+
+      <p id="opst_error" class="hidden rounded-md bg-danger/10 px-3 py-2 text-xs font-medium text-danger"></p>
+      <button type="button" id="opst_btn_submit" class="btn-action btn-action--success w-full">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Popup Pilih Sales -->
+<div id="popup-ops-pilih-sales" class="app-popup hidden fixed inset-0 z-[110] items-end sm:items-center justify-center bg-black/40">
+  <div class="app-overlay-panel bg-white w-full sm:max-w-sm sm:rounded-lg rounded-t-lg h-[80vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+      <div class="font-bold text-ink-primary text-sm">Pilih Sales</div>
+      <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+    </div>
+    <div class="p-3 space-y-3">
+      <div class="search-input-wrap">
+        <input id="opsp_search" type="text" placeholder="Cari nama sales" class="search-input" />
+        <svg class="search-icon w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+      </div>
+      <div id="opsp_list" class="divide-y divide-ink-faint"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Popup Detail Transaksi -->
+<div id="popup-ops-detail" class="app-popup hidden fixed inset-0 z-[110] items-end sm:items-center justify-center bg-black/40">
+  <div class="app-overlay-panel bg-white w-full sm:max-w-md sm:rounded-lg rounded-t-lg h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+      <div class="font-bold text-ink-primary text-sm">Detail Transaksi</div>
+      <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+    </div>
+    <div id="opsd_body" class="p-3 space-y-3 text-sm"></div>
+    <div id="opsd_actions" class="hidden gap-2 p-3 pt-0">
+      <button id="opsd_btn_tolak" class="btn-action btn-action--danger flex-1">Tolak</button>
+      <button id="opsd_btn_setujui" class="btn-action btn-action--success flex-1">Setujui</button>
+    </div>
+  </div>
+</div>
+
+<!-- Popup alasan Tolak (app.dialog TIDAK punya prompt(), lihat catatan di
+     operasionalSales.js -- pola sama dgn #popup-surat-terlambat di
+     pages/absen/validasi.html: catatan via input biasa, bukan native prompt()) -->
+<div id="popup-ops-tolak" class="app-popup hidden fixed inset-0 z-[120] items-end sm:items-center justify-center bg-black/40">
+  <div class="app-overlay-panel bg-white w-full sm:max-w-sm sm:rounded-lg rounded-t-lg overflow-y-auto">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-ink-faint sticky top-0 bg-white z-10">
+      <div class="font-bold text-ink-primary text-sm">Tolak Transaksi</div>
+      <button class="popup-close text-ink-secondary text-xl leading-none">&times;</button>
+    </div>
+    <div class="p-3 space-y-3">
+      <div>
+        <label class="mat-label" for="opstl_catatan">Alasan Penolakan</label>
+        <textarea id="opstl_catatan" rows="3" class="mat-input" style="height:auto;" placeholder="Wajib diisi"></textarea>
+      </div>
+      <button type="button" id="opstl_btn_submit" class="btn-action btn-action--danger w-full">Kirim</button>
+    </div>
+  </div>
+</div>

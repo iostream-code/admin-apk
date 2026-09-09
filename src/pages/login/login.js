@@ -5,6 +5,8 @@ import { Router } from '../../lib/router.js';
 import { CURRENT_APP_VERSION_CODE } from '../../lib/app-version.js';
 import { startVersionCheck } from '../../lib/version-check.js';
 import { hideAuthedShell } from '../../lib/shell.js';
+import { setEkspedisiToken, clearEkspedisiToken } from '../../lib/ekspedisiAuth.js';
+import { initFirebaseNotif } from '../../lib/firebaseNotif.js';
 
 export function mount(container) {
   container.innerHTML = tpl;
@@ -31,53 +33,86 @@ export function mount(container) {
 
     jQuery.ajax({
       type: 'POST',
-      // Endpoint SAMA PERSIS admin-finance-apk asli (ServiceController::getDataLogin(),
-      // backend-production) -- TANPA prefix modul apa pun, lihat catatan di config.js.
+      // [CUTOVER 2026-09-07] backend-migrasi (App\Admin\Controllers\AuthController::login()),
+      // BUKAN lagi ServiceController::getDataLogin() (backend-production) --
+      // lihat catatan panjang di lib/config.js.
       url: APP_CONFIG.API_BASE_URL + APP_CONFIG.LOGIN_ENDPOINT,
       dataType: 'JSON',
       data: { username, password },
       beforeSend() {
         app.dialog.preloader('Sedang Memeriksa Data');
       },
+      // Backend-migrasi signal kegagalan lewat HTTP status (401/403/422 +
+      // {message}), BUKAN lagi literal `0` ala ServiceController::getDataLogin()
+      // lama -- makanya semua kasus gagal (username tidak ditemukan, password
+      // salah, status pegawai tidak aktif) masuk error() di bawah, BUKAN
+      // success(). Pola SAMA PERSIS dgn finance-v2-apk/ekspedisi-apk/
+      // inventory-apk/login.js.
       success(data) {
         app.dialog.close();
 
-        // Backend mengembalikan 0 (bukan object) kalau kredensial salah -- dicek
-        // LEBIH DULU sebelum mengakses data.user_position (beda dari urutan di
-        // admin-finance-apk/www/js/login.js asli, yang mengecek user_position
-        // dulu baru "data==0" DI DALAMNYA -- urutan itu membuat cabang pesan
-        // "Username Atau Password Salah" tidak pernah tercapai krn
-        // `(0).user_position` sudah duluan bernilai undefined != 'Admin'.
-        // Diperbaiki di sini supaya kedua pesan kesalahan benar-benar tampil
-        // sesuai kondisinya, tanpa mengubah keputusan bisnisnya sama sekali:
-        // hanya user_position === 'Admin' yang boleh masuk.).
-        if (!data || data === 0) {
-          app.dialog.alert('Username Atau Password Salah');
-          return;
-        }
+        const user = data.user || {};
 
-        if (data.user_position !== 'Admin') {
+        // Gerbang "Role User Bukan Admin" DIPERTAHANKAN apa adanya --
+        // sumbernya sekarang user.user_position, field bridge legacy (lihat
+        // docblock AuthController::fetchLegacyBridge()), null kalau akun ini
+        // tidak py padanan tabel legacy (akan gagal gerbang ini juga, wajar).
+        if (user.user_position !== 'Admin') {
           app.dialog.alert('Role User Bukan Admin');
           return;
         }
 
         localStorage.setItem('valid_app_version', String(CURRENT_APP_VERSION_CODE));
-        localStorage.setItem('user_id', data.user_id);
-        localStorage.setItem('username', data.username);
-        localStorage.setItem('password', data.password_real);
-        localStorage.setItem('karyawan_nama', data.karyawan_nama);
+        // Token JWT modul Admin -- dibaca ulang oleh
+        // lib/auth.js::initAuthInterceptor() (dipasang sekali di main.js) utk
+        // di-auto-attach ke SEMUA panggilan /admin/* berikutnya. Tanpa ini,
+        // panggilan setelah login akan 401.
+        localStorage.setItem('token', data.token);
+        // [PENTING] user_id di sini SENGAJA user.legacy_user_id (id tabel
+        // LEGACY `users`), BUKAN user.id (id shared_m_users, dari JWT sub) --
+        // Point/Ijin/Finance semua masih query tabel legacy & terima
+        // parameter karyawan_id/user_id dlm ruang id LEGACY (2 ruang id ini
+        // TIDAK SELALU SAMA utk akun yg sama, lihat docblock panjang
+        // AuthController backend-migrasi) -- kalau field ini null (akun
+        // tidak py padanan legacy), fitur2 itu otomatis dapat data kosong,
+        // bukan error keras.
+        localStorage.setItem('user_id', user.legacy_user_id);
+        localStorage.setItem('username', user.username);
+        // [DIHAPUS 2026-09-07] `localStorage.setItem('password', ...)` --
+        // backend-migrasi TIDAK mengembalikan password plaintext sama sekali
+        // (login lama, ServiceController::getDataLogin(), sengaja/tidak
+        // sengaja mengembalikannya). Dicek dulu: key 'password' TIDAK PERNAH
+        // dibaca di mana pun di app ini (grep nihil) -- aman dihapus, bukan
+        // regresi fitur, sekalian menghindari nyimpen password plaintext di
+        // localStorage yang sebelumnya memang tidak perlu.
+        localStorage.setItem('karyawan_nama', user.karyawan_nama || user.name);
         localStorage.setItem('login', 'true');
-        localStorage.setItem('jabatan', data.user_position);
-        localStorage.setItem('jabatan_kantor', data.jabatan);
-        localStorage.setItem('sales_kota', data.kota);
-        localStorage.setItem('lokasi_pabrik_user', data.lokasi_pabrik);
-        localStorage.setItem('lokasi_pabrik', data.lokasi_pabrik);
-        localStorage.setItem('lokasi_absen', data.lokasi_absen);
-        localStorage.setItem('primary_kas', data.primary_kas);
+        localStorage.setItem('jabatan', user.user_position);
+        localStorage.setItem('jabatan_kantor', user.jabatan_kantor);
+        localStorage.setItem('sales_kota', user.kota);
+        localStorage.setItem('lokasi_pabrik_user', user.lokasi_pabrik);
+        localStorage.setItem('lokasi_pabrik', user.lokasi_pabrik);
+        localStorage.setItem('lokasi_absen', user.lokasi_absen);
+        localStorage.setItem('primary_kas', user.primary_kas);
 
-        // TODO: initNotificationManagerAfterLogin() -- porting NotificationManager
-        // (FCM) dari admin-finance-apk/www/js/notification.js belum dilakukan di
-        // pass ini, lihat README.md "Status Migrasi".
+        // Token modul Ekspedisi (menu SJ) -- lihat docblock panjang
+        // lib/ekspedisiAuth.js. Null kalau akun ini tidak terdaftar sbg admin
+        // Ekspedisi (`ekspedisi_m_admin_access`) -- shell.js cukup sembunyikan
+        // tab SJ utk akun itu, bukan error keras.
+        if (data.ekspedisi_token) {
+          setEkspedisiToken(data.ekspedisi_token);
+        } else {
+          clearEkspedisiToken();
+        }
+
+        // [BARU 2026-09-07 atas permintaan user, "pastikan firebasenya juga
+        // sudah terinstall"] forceRefresh=true -- baru login, minta izin +
+        // daftar token dari awal (lihat docblock initFirebaseNotif()).
+        // user.legacy_user_id SAMA dgn yang disimpan localStorage.user_id di
+        // atas (ruang id LEGACY, `users.user_id`) -- lihat docblock
+        // App\Admin\Controllers\NotificationController soal kenapa ruang id
+        // ini yang dipakai, bukan JWT sub.
+        initFirebaseNotif(user.legacy_user_id, true);
 
         startVersionCheck();
 
@@ -89,9 +124,10 @@ export function mount(container) {
         // (lihat README.md).
         Router.navigate('/point/sales');
       },
-      error() {
+      error(xhr) {
         app.dialog.close();
-        app.dialog.alert('Gagal menghubungi server, silakan coba lagi.');
+        const res = xhr.responseJSON;
+        app.dialog.alert((res && res.message) || 'Gagal menghubungi server, silakan coba lagi.');
       },
     });
   }

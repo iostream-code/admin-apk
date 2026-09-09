@@ -1,0 +1,91 @@
+<div id="sjnew-content" class="pb-10">
+
+  <div class="px-3 pt-3 pb-2 flex items-center gap-2">
+    <button id="sjnew_back" class="icon-btn w-8 h-8 flex-shrink-0" title="Kembali">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6" />
+      </svg>
+    </button>
+    <p class="section-title text-base">Buat SJ Customer</p>
+  </div>
+
+  <form id="sjnew_form" class="px-3 pb-6 space-y-3">
+
+    <div class="card-surface p-3 space-y-3">
+      <p class="mat-label">SPK</p>
+      <div>
+        <label class="mat-label" for="sjnew_penjualan_id">Nomor SPK</label>
+        <div class="flex gap-2">
+          <input id="sjnew_penjualan_id" type="text" placeholder="Contoh: 1701-5" class="mat-input flex-1" />
+          <button type="button" id="sjnew_btn_tambah_spk" class="icon-btn !w-auto px-4 text-xs font-bold flex-shrink-0">+ Tambah</button>
+        </div>
+        <div id="sjnew_spk_groups" class="mt-3 hidden space-y-3"></div>
+        <p id="sjnew_spk_error" class="mt-2 hidden rounded-md bg-danger/10 px-3 py-2 text-xs font-medium text-danger"></p>
+      </div>
+    </div>
+
+    <div class="card-surface p-3 space-y-3">
+      <p class="mat-label">Detail Surat Jalan</p>
+
+      <div>
+        <label class="mat-label" for="sjnew_nomor_urut">Nomor SJ</label>
+        <input id="sjnew_nomor_urut" type="number" min="1" required inputmode="numeric" placeholder="Contoh: 1234" class="mat-input" />
+      </div>
+
+      <div>
+        <label class="mat-label" for="sjnew_tujuan">Tujuan</label>
+        <input id="sjnew_tujuan" type="text" placeholder="Contoh: Toko Makmur Jaya, Sidoarjo" class="mat-input" />
+      </div>
+
+      <div>
+        <label class="mat-label" for="sjnew_driver_id">Supir</label>
+        <select id="sjnew_driver_id" required class="mat-input">
+          <option value="" disabled selected>-- Pilih supir --</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="mat-label" for="sjnew_kendaraan">Kendaraan</label>
+          <input id="sjnew_kendaraan" type="text" placeholder="Grandmax" class="mat-input" />
+        </div>
+        <div>
+          <label class="mat-label" for="sjnew_plat">Plat</label>
+          <input id="sjnew_plat" type="text" placeholder="P 1234 XY" class="mat-input" />
+        </div>
+      </div>
+
+      <div>
+        <label class="mat-label" for="sjnew_penerima">Penerima (opsional)</label>
+        <input id="sjnew_penerima" type="text" placeholder="Nama PIC di tujuan" class="mat-input" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div id="sjnew_jumlah_kirim_wrap">
+          <label class="mat-label" for="sjnew_jumlah_kirim">Jumlah kirim</label>
+          <input id="sjnew_jumlah_kirim" type="number" min="0" placeholder="0" class="mat-input" />
+        </div>
+        <div>
+          <label class="mat-label" for="sjnew_tgl_kirim">Tanggal kirim</label>
+          <input id="sjnew_tgl_kirim" type="date" class="mat-input" />
+        </div>
+      </div>
+
+      <div>
+        <label class="mat-label">Foto Surat Jalan (opsional)</label>
+        <button type="button" id="sjnew_btn_foto" class="icon-btn !w-full text-xs font-bold">Ambil Foto</button>
+        <p id="sjnew_foto_status" class="mt-1.5 text-xs text-ink-muted">Belum ada foto.</p>
+      </div>
+
+      <div>
+        <label class="mat-label" for="sjnew_catatan">Catatan (opsional)</label>
+        <textarea id="sjnew_catatan" rows="2" class="mat-input" style="height:auto;"></textarea>
+      </div>
+
+      <p id="sjnew_form_error" class="hidden rounded-md bg-danger/10 px-3 py-2 text-xs font-medium text-danger"></p>
+      <button type="submit" id="sjnew_btn_submit" class="btn-action btn-action--primary">Buat Surat Jalan</button>
+    </div>
+
+  </form>
+</div>

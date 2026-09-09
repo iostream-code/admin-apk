@@ -1,39 +1,44 @@
 // Finance -- Payment. Porting dari admin-finance-apk/www/js/notif.js
-// (getDashboardNotif/openPopupValidasi/openPopupUnvalid/
-// prosesValidasiPembayaran/prosesUnvalidPembayaran/openPopupSales/
-// openPopupALamat) + notif.html.
+// (getDashboardNotif/openPopupValidasi/openPopupSales/openPopupALamat) +
+// notif.html. `openPopupUnvalid`/`prosesUnvalidPembayaran` (reset validasi)
+// SEMPAT ikut diporting, DIHAPUS lagi 2026-09-07 atas permintaan user
+// ("data yg sudah divalidasi tidak bisa direset. jadi hilangkan fitur
+// tersebut") -- lihat catatan di renderTable().
 //
 // SCOPE PASS INI (disepakati dgn user 2026-08-26): data inti -- tabel log
 // pembayaran DIGABUNG 1 halaman (BUKAN 2 halaman terpisah spt
-// admin-finance-apk lama), status Unvalid/Valid lewat 1 dropdown filter
-// (#pay_status_filter, BUKAN 2 tombol toggle terpisah spt aslinya -- atas
-// permintaan user "jadikan satu saja buat sebagai filter") + 1 search box
+// admin-finance-apk lama), status Unvalid/Valid sempat lewat 1 dropdown
+// filter (#pay_status_filter, BUKAN 2 tombol toggle terpisah spt aslinya --
+// atas permintaan user "jadikan satu saja buat sebagai filter") -- DICOPOT
+// lagi 2026-09-07 atas permintaan user susulan ("hilangkan filter ganti
+// dengan button history disamping refresh konsepnya sama seperti yg ada di
+// menu SJ"), lihat #pay_toggle_riwayat di bawah -- + 1 search box
 // gabungan Perusahaan/Sales (#pay_search, jg atas permintaan user -- lihat
 // catatan panjang di loadDataNotif() soal kenapa filternya jalan di FE) +
 // popup Validasi (pilih bank, upload bukti mutasi kalau "Mandiri Kopra") +
-// popup Unvalid (reset) + popup kecil Info Client/Sales + PAGINASI
-// (`#pay_pagination`, ditambahkan 2026-08-26 atas permintaan user, pola
-// sama persis dgn inventory-apk/src/pages/partner/partner.js -- 20
-// baris/halaman, dipotong DI FE dari `rowsData` yg sudah difilter, bukan
-// fetch ulang tiap ganti halaman -- lihat renderTable()). BELUM diporting:
-// popup Detail SPK (`detailPenjualanNotif`, ~200 baris) & popup Detail
-// Histori Pembayaran (`detailPembayaranNotif`, ~500 baris, riwayat hingga
-// 10x bayar per SPK) -- keduanya drill-down informasi (bukan aksi wajib
-// utk alur valid/unvalid), ditunda ke pass berikutnya. Kolom SPK & Jumlah
-// SENGAJA tidak bisa diklik di sini (sama pola dgn kolom SPK Point
-// Produksi yang sengaja tidak diklik krn popup targetnya belum ada).
+// popup kecil Info Client/Sales + PAGINASI (`#pay_pagination`, ditambahkan
+// 2026-08-26 atas permintaan user, pola sama persis dgn
+// inventory-apk/src/pages/partner/partner.js -- 20 baris/halaman, dipotong
+// DI FE dari `rowsData` yg sudah difilter, bukan fetch ulang tiap ganti
+// halaman -- lihat renderTable()). BELUM diporting: popup Detail SPK
+// (`detailPenjualanNotif`, ~200 baris) & popup Detail Histori Pembayaran
+// (`detailPembayaranNotif`, ~500 baris, riwayat hingga 10x bayar per SPK) --
+// keduanya drill-down informasi (bukan aksi wajib utk alur valid), ditunda
+// ke pass berikutnya. Kolom SPK & Jumlah SENGAJA tidak bisa diklik di sini
+// (sama pola dgn kolom SPK Point Produksi yang sengaja tidak diklik krn
+// popup targetnya belum ada).
 //
 // KONTRAK BACKEND: endpoint valid-bukti-pembayaran-admin/
-// unvalid-bukti-pembayaran/get-notif-pembayaran-admin sudah dicek COCOK
-// PERSIS dgn ServiceController@validBuktiPembayaranAdmin/
-// unvalidBuktiPembayaran & AdminController@getNotifPembayaranAdmin saat
-// ini (beda dgn kasus Ijin di pages/absen/ijin.js yang ternyata sudah
-// basi) -- porting di sini APA ADANYA, bukan rekonstruksi kontrak baru.
+// get-notif-pembayaran-admin sudah dicek COCOK PERSIS dgn
+// ServiceController@validBuktiPembayaranAdmin & AdminController@
+// getNotifPembayaranAdmin saat ini (beda dgn kasus Ijin di
+// pages/absen/ijin.js yang ternyata sudah basi) -- porting di sini APA
+// ADANYA, bukan rekonstruksi kontrak baru.
 //
 // `asal_server` (field per-baris dari log_pembayaran.asal_server) dipakai
-// APA ADANYA utk endpoint valid/unvalid & preview bukti mutasi (BISA beda2
-// per baris) -- TIDAK diganti APP_CONFIG.API_BASE_URL. Foto "Bukti
-// Pembayaran dari Sales" di kedua popup manual pakai domain tetap
+// APA ADANYA utk endpoint valid & preview bukti mutasi (BISA beda2 per
+// baris) -- TIDAK diganti APP_CONFIG.API_BASE_URL. Foto "Bukti Pembayaran
+// dari Sales" di popup manual pakai domain tetap
 // (IMAGE_BASE_URL) persis kode aslinya yang hardcode 'https://indokoper.com'
 // utk foto ini (beda dari foto bukti mutasi yang pakai asal_server) --
 // inkonsistensi ini ADA DI ASLINYA, bukan salah ketik di sini.
@@ -103,7 +108,13 @@ export function mount(container) {
   container.innerHTML = tpl;
   showAuthedShell('/finance/payment');
 
-  let validAdmin = 0; // 0 = Unvalid, 1 = Valid -- pengganti localStorage('notif_value') di app lama, sekarang lewat dropdown #pay_status_filter (bukan 2 tombol toggle)
+  // 0 = Unvalid (tampil default -- data yang PERLU DIPROSES), 1 = Valid
+  // (tampil kalau tombol "Riwayat" aktif) -- pengganti localStorage('notif_value')
+  // di app lama. [BERUBAH 2026-09-07] SEBELUMNYA lewat dropdown
+  // #pay_status_filter, sekarang lewat toggle #pay_toggle_riwayat, konsep
+  // SAMA PERSIS pages/sj/list.js (historyMode: false=aktif/perlu diproses,
+  // true=riwayat/sudah selesai).
+  let validAdmin = 0;
   let searchTimeout = null;
   let currentPage = 1;
   let rowsData = []; // seluruh baris HASIL filter pencarian (SEBELUM dipotong per halaman) -- lookup dari data-idx tombol Opsi/Client/Sales -> row, lihat renderTable()
@@ -117,7 +128,7 @@ export function mount(container) {
   function loadBankList() {
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/get-bank-list',
+      url: APP_CONFIG.API_BASE_URL + '/finance/get-bank-list',
       dataType: 'JSON',
       success(data) {
         if (Number(data.status) === 1 && Array.isArray(data.data)) {
@@ -131,9 +142,10 @@ export function mount(container) {
     });
   }
 
-  jQuery('#pay_status_filter').on('change', function () {
-    validAdmin = Number(jQuery(this).val());
+  jQuery('#pay_toggle_riwayat').on('click', () => {
+    validAdmin = validAdmin === 0 ? 1 : 0;
     currentPage = 1;
+    jQuery('#pay_toggle_riwayat').toggleClass('icon-btn--danger', validAdmin === 1);
     loadDataNotif();
   });
 
@@ -161,10 +173,22 @@ export function mount(container) {
   // per status (valid_admin) dari backend -- bukan dikirim ke param
   // perusahaan_notif_value/sales_notif_filter sama sekali (keduanya selalu
   // 'empty' ke backend).
+  // Kolom "Aksi" cuma relevan di mode Unvalid (satu-satunya isinya, tombol
+  // Valid) -- lihat catatan panjang di renderTable() soal kenapa DICOPOT
+  // SELURUHNYA (bukan cuma dikosongkan) di mode Riwayat/Valid, pola SAMA
+  // PERSIS pages/sj/list.js (showAksi). Dipakai jg utk colspan pesan
+  // loading/error/kosong di bawah supaya tetap selebar tabel yang lagi
+  // ditampilkan.
+  function colCount() {
+    return validAdmin === 0 ? 10 : 9;
+  }
+
   function loadDataNotif() {
+    jQuery('#pay_thead_row').find('th').eq(9).toggle(validAdmin === 0);
+
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/get-notif-pembayaran-admin',
+      url: APP_CONFIG.API_BASE_URL + '/finance/get-notif-pembayaran-admin',
       dataType: 'JSON',
       data: {
         karyawan_id: localStorage.getItem('user_id'),
@@ -173,11 +197,11 @@ export function mount(container) {
         sales_notif_filter: 'empty',
       },
       beforeSend() {
-        jQuery('#pay_table_body').html('<tr><td colspan="10" class="tbl-empty">Memuat data...</td></tr>');
+        jQuery('#pay_table_body').html(`<tr><td colspan="${colCount()}" class="tbl-empty">Memuat data...</td></tr>`);
       },
       success(data) {
         if (Number(data.status) !== 1) {
-          jQuery('#pay_table_body').html(`<tr><td colspan="10" class="tbl-empty">Gagal memuat data. ${data.message || ''}</td></tr>`);
+          jQuery('#pay_table_body').html(`<tr><td colspan="${colCount()}" class="tbl-empty">Gagal memuat data. ${data.message || ''}</td></tr>`);
           jQuery('#pay_count').text('0');
           return;
         }
@@ -191,7 +215,7 @@ export function mount(container) {
         renderTable();
       },
       error() {
-        jQuery('#pay_table_body').html('<tr><td colspan="10" class="tbl-empty">Gagal menghubungi server.</td></tr>');
+        jQuery('#pay_table_body').html(`<tr><td colspan="${colCount()}" class="tbl-empty">Gagal menghubungi server.</td></tr>`);
         jQuery('#pay_count').text('0');
       },
     });
@@ -207,7 +231,7 @@ export function mount(container) {
     jQuery('#pay_count').text(String(total));
 
     if (!total) {
-      jQuery('#pay_table_body').html('<tr><td colspan="10" class="tbl-empty">Data Kosong.</td></tr>');
+      jQuery('#pay_table_body').html(`<tr><td colspan="${colCount()}" class="tbl-empty">Data Kosong.</td></tr>`);
       jQuery('#pay_pagination').html('');
       return;
     }
@@ -217,6 +241,16 @@ export function mount(container) {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     const pageRows = rowsData.slice(start, start + ITEMS_PER_PAGE);
 
+    // [BERUBAH 2026-09-07 atas permintaan user, "data yg sudah divalidasi
+    // tidak bisa direset. jadi hilangkan fitur tersebut"] Kolom "Aksi"
+    // SEKARANG cuma berisi tombol "Valid" di mode Unvalid -- tombol
+    // "Unvalid"/reset (openPopupUnvalid/prosesUnvalidPembayaran, popup
+    // #popup-payment-unvalid) DIHAPUS SELURUHNYA, bukan cuma disembunyikan
+    // (backend tidak pernah benar2 bisa reset data yang sudah tervalidasi).
+    // Kolom Aksi ikut DICOPOT SELURUHNYA di mode Riwayat/Valid (tidak ada
+    // isinya lagi sama sekali) -- pola SAMA PERSIS pages/sj/list.js (showAksi).
+    const showAksi = validAdmin === 0;
+
     const bodyHtml = pageRows.map((val, localIdx) => {
       const idx = start + localIdx;
       const lunas = parseFloat(val.penjualan_grandtotal - val.penjualan_jumlah_pembayaran) <= 0;
@@ -224,10 +258,6 @@ export function mount(container) {
       const nUrut = String(val.foto_urutan || 'foto_1').replace('foto_', '');
       const bank = val['bank_' + nUrut] || '-';
       const ket = val['keterangan_' + nUrut] || '-';
-
-      const opsiBtn = validAdmin === 0
-        ? `<button data-idx="${idx}" class="btn-tbl btn-tbl--muted btn-pay-validasi">Valid</button>`
-        : `<button data-idx="${idx}" class="btn-tbl btn-tbl--danger btn-pay-unvalid">Unvalid</button>`;
 
       return `
         <tr class="${rowCls}">
@@ -240,7 +270,7 @@ export function mount(container) {
           <td class="td-right">${numberFormat(val.jumlah_payment)}</td>
           <td class="td-left">${ket}</td>
           <td class="td-center">${getBankLabel(val.bank_validasi || bank, bankById)}</td>
-          <td class="td-center">${opsiBtn}</td>
+          ${showAksi ? `<td class="td-center"><button data-idx="${idx}" class="btn-tbl btn-tbl--muted btn-pay-validasi">Valid</button></td>` : ''}
         </tr>
       `;
     }).join('');
@@ -475,117 +505,14 @@ export function mount(container) {
     });
   }
 
-  // ===========================================================
-  // Popup Unvalid / Reset (porting openPopupUnvalid/prosesUnvalidPembayaran)
-  // ===========================================================
-  jQuery('#pay_table_body').on('click', '.btn-pay-unvalid', function () {
-    const val = rowsData[jQuery(this).data('idx')];
-    if (val) openPopupUnvalid(val);
-  });
-
-  function openPopupUnvalid(val) {
-    const isiFoto = val[val.foto_urutan];
-    const fotoSrc = !isEmpty(isiFoto) ? IMAGE_BASE + '/foto_pembayaran/' + isiFoto : IMAGE_BASE + '/noimage.jpg';
-    const bankRekening = getBankLabel(val.bank_validasi, bankById);
-    const isMandiriKopra = val.bank_validasi === 'Mandiri Kopra';
-
-    let buktiMutasiHtml = '';
-    if (isMandiriKopra) {
-      const mutasiSrc = !isEmpty(val.foto_bukti_payment)
-        ? val.asal_server + '/foto_pembayaran/' + val.foto_bukti_payment
-        : IMAGE_BASE + '/noimage.jpg';
-      buktiMutasiHtml = `
-        <div class="card-surface overflow-hidden">
-          <div class="bg-surface-raised text-center text-xs font-bold text-ink-secondary py-1.5">Bukti Mutasi</div>
-          <div class="p-2 text-center">
-            <img data-zoom-src="${mutasiSrc}" src="${mutasiSrc}" class="max-h-64 inline-block rounded cursor-zoom-in img-zoom-pay" />
-            <p class="text-xs text-ink-muted mt-1">Klik gambar untuk memperbesar</p>
-          </div>
-        </div>
-      `;
-    } else {
-      buktiMutasiHtml = `
-        <div class="card-surface p-2.5 text-center text-xs text-primary">
-          ℹ️ Rekening ini tidak memerlukan bukti mutasi.
-        </div>
-      `;
-    }
-
-    jQuery('#pay_unvalid_body').html(`
-      <div class="card-surface overflow-hidden">
-        <div class="bg-surface-raised text-center text-xs font-bold text-ink-secondary py-1.5">Bukti Pembayaran dari Sales</div>
-        <div class="p-2 text-center">
-          <img data-zoom-src="${fotoSrc}" src="${fotoSrc}" class="max-h-40 inline-block rounded cursor-zoom-in img-zoom-pay" />
-        </div>
-      </div>
-      <div class="card-surface p-3 text-xs">
-        <div class="flex justify-between py-1 border-b border-ink-faint">
-          <span class="text-ink-secondary">Rekening</span>
-          <span class="font-semibold text-primary">${bankRekening}</span>
-        </div>
-        <div class="flex justify-between py-1 border-b border-ink-faint">
-          <span class="text-ink-secondary">Nominal</span>
-          <span class="font-semibold text-success">Rp ${numberFormat(val.jumlah_bukti_payment)}</span>
-        </div>
-        <div class="flex justify-between py-1">
-          <span class="text-ink-secondary">Status</span>
-          <span class="font-semibold text-success">Valid</span>
-        </div>
-      </div>
-      ${buktiMutasiHtml}
-      <div class="card-surface p-2.5 text-center text-xs text-danger">
-        ⚠️ Reset validasi akan menghapus status valid dan bukti pembayaran yang sudah diupload.
-      </div>
-      <button id="pay_btn_submit_unvalid" class="btn-action btn-action--danger w-full mt-1">Reset Validasi (Unvalid)</button>
-    `);
-
-    jQuery('#pay_unvalid_body').data('current-val', val);
-    app.popup.open('#popup-payment-unvalid');
-  }
-
-  jQuery('#pay_unvalid_body').on('click', '.img-zoom-pay', function () {
-    app.photoBrowser.create({ photos: [jQuery(this).data('zoom-src')] }).open();
-  });
-
-  jQuery('#pay_unvalid_body').on('click', '#pay_btn_submit_unvalid', () => prosesUnvalidPembayaran());
-
-  // Porting prosesUnvalidPembayaran().
-  function prosesUnvalidPembayaran() {
-    const val = jQuery('#pay_unvalid_body').data('current-val');
-    app.dialog.confirm(
-      'Apakah Anda yakin ingin mereset validasi pembayaran ini? Status akan kembali menjadi UNVALID dan bukti pembayaran akan dihapus.',
-      'Konfirmasi Reset Validasi',
-      () => {
-        jQuery.ajax({
-          type: 'POST',
-          url: val.asal_server + '/api/unvalid-bukti-pembayaran',
-          dataType: 'JSON',
-          data: {
-            penjualan_id: val.penjualan_id,
-            id_log_pembayaran: val.id_log_pembayaran,
-            user_record: localStorage.getItem('karyawan_nama'),
-          },
-          beforeSend() {
-            app.dialog.preloader('Proses Reset Validasi...');
-          },
-          success(data) {
-            app.dialog.close();
-            if (Number(data.status) === 1) {
-              app.popup.close('#popup-payment-unvalid');
-              app.dialog.alert('Berhasil mereset validasi pembayaran!', 'Sukses');
-              loadDataNotif();
-            } else {
-              app.dialog.alert(data.message || 'Gagal reset validasi', 'Error');
-            }
-          },
-          error() {
-            app.dialog.close();
-            app.dialog.alert('Terjadi kesalahan saat memproses.', 'Error');
-          },
-        });
-      },
-    );
-  }
+  // [DIHAPUS 2026-09-07 atas permintaan user, "data yg sudah divalidasi
+  // tidak bisa direset. jadi hilangkan fitur tersebut"] Popup Unvalid/Reset
+  // (openPopupUnvalid/prosesUnvalidPembayaran, endpoint
+  // unvalid-bukti-pembayaran, popup #popup-payment-unvalid di payment.html)
+  // -- backend tidak pernah benar2 bisa reset data yang sudah tervalidasi,
+  // jadi fiturnya dicabut seluruhnya (bukan cuma disembunyikan). Baris Valid
+  // di mode Riwayat sekarang TANPA aksi apa pun (lihat showAksi di
+  // renderTable()), sama pola dgn baris tervalidasi di pages/sj/list.js.
 
   loadBankList();
   loadDataNotif();

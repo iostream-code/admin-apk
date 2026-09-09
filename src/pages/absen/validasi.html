@@ -14,19 +14,29 @@
       <option value="produksi">Produksi</option>
       <option value="staff">Staff</option>
     </select>
-    <button id="av_refresh" class="icon-btn flex-shrink-0" title="Muat Ulang">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="23 4 23 10 17 10" />
-        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-      </svg>
-    </button>
+  </div>
+
+  <!-- [STANDARISASI 2026-09-07 atas permintaan user, "standarisasikan
+       button di admin-apk sama seperti yg ada di finance-v2-apk, pastikan
+       layout section-title dan toolbarnya juga sama"] Baris section-title +
+       toolbar tombol -- baris SENDIRI (px-3 pb-2, SEJAJAR dgn wrapper tabel
+       di bawah, bukan nested di dalamnya), tombol dibungkus
+       .flex.items-center.gap-1.5.flex-shrink-0, ukuran icon-btn w-8 h-8 +
+       svg w-3.5 h-3.5 -- pola PERSIS finance-v2-apk/src/pages/absen/validasi.html. -->
+  <div class="px-3 pb-2 flex items-center justify-between gap-2">
+    <p class="section-title text-sm">Data | <span class="section-count text-sm" id="av_count">0</span></p>
+    <div class="flex items-center gap-1.5 flex-shrink-0">
+      <button id="av_refresh" class="icon-btn w-8 h-8 flex-shrink-0" title="Muat Ulang">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10" />
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+        </svg>
+      </button>
+    </div>
   </div>
 
   <div class="px-3 pb-4">
-    <div class="flex items-center justify-between mb-1.5 px-0.5">
-      <p class="section-title text-sm">Data | <span class="section-count" id="av_count">0</span></p>
-    </div>
     <div class="card-surface overflow-hidden">
       <div class="tbl-wrap">
         <table class="tbl-dark" style="min-width:760px;">

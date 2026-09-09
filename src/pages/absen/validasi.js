@@ -23,6 +23,11 @@
 // pernah benar2 terisi di app lama manapun. Bukan regresi di sini, sengaja
 // dibiarkan '-' juga.
 
+// [CUTOVER 2026-09-07] Halaman ini TETAP panggil BACKEND_PRODUCTION_URL
+// (BUKAN API_BASE_URL/backend-migrasi) -- modul Absen/Presensi (termasuk
+// "Surat Terlambat" baru) belum ada portingnya di backend-migrasi sama
+// sekali, lihat catatan panjang di lib/config.js.
+
 import tpl from './validasi.html?raw';
 import { APP_CONFIG } from '../../lib/config.js';
 import { numberFormat, formatDateShort } from '../../lib/format.js';
@@ -174,7 +179,7 @@ export function mount(container) {
 
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/hrm/presensi/valid',
+      url: APP_CONFIG.BACKEND_PRODUCTION_URL + '/hrm/presensi/valid',
       dataType: 'JSON',
       data: {
         posisi: $posisi.val(),
@@ -217,7 +222,6 @@ export function mount(container) {
 
         rowsData = [];
         let no = 0;
-        let calcTotal = 0;
         const bodyRows = [];
 
         rows.forEach((val) => {
@@ -225,11 +229,9 @@ export function mount(container) {
           const isLemburEntry = val.flag_absensi === 'lembur';
 
           // Entri lembur yang PUNYA pasangan normal hari yang sama -- jangan
-          // dirender sbg baris sendiri, cuma kontribusi tombol "Lembur" +
-          // total ke baris normal-nya (di bawah).
+          // dirender sbg baris sendiri sama sekali (baris normal-nya sudah
+          // mewakili, lihat lemburPasangan di bawah).
           if (isLemburEntry && normalKeys[key]) {
-            const hasilSkip = hitungBaris(val);
-            if (hasilSkip.ada_jam_keluar) calcTotal += hasilSkip.total;
             return;
           }
 
@@ -287,18 +289,14 @@ export function mount(container) {
               <td class="td-left"><div class="flex gap-1">${opsi}</div></td>
             </tr>
           `);
-
-          if (hasil.ada_jam_keluar) calcTotal += hasil.total;
         });
 
-        bodyRows.push(`
-          <tr>
-            <td colspan="7"></td>
-            <td class="td-center font-bold">${numberFormat(calcTotal)}</td>
-            <td></td>
-          </tr>
-        `);
-
+        // [DIHAPUS 2026-09-07, sesuai perbaikan yg sama di finance-v2-apk/
+        // src/pages/absen/validasi.js atas permintaan user "pada tab
+        // Validasi, total gaji tidak perlu ditampilkan dimanapun"] Baris
+        // total (colspan) di dalam tabel DIHAPUS TOTAL, bukan cuma
+        // dipindah/disembunyikan -- termasuk kalkulasi calcTotal yg jadi
+        // tidak terpakai.
         jQuery('#av_count').text(String(no));
         jQuery('#av_table_body').html(bodyRows.join(''));
       },
@@ -384,7 +382,7 @@ export function mount(container) {
 
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/hrm/presensi/simpan-valid',
+      url: APP_CONFIG.BACKEND_PRODUCTION_URL + '/hrm/presensi/simpan-valid',
       dataType: 'JSON',
       data: ajaxData,
       ...ajaxOpts,
@@ -470,7 +468,7 @@ export function mount(container) {
 
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/hrm/presensi/proses-surat-terlambat',
+      url: APP_CONFIG.BACKEND_PRODUCTION_URL + '/hrm/presensi/proses-surat-terlambat',
       dataType: 'JSON',
       data: {
         absensi_id: val.absensi_id,
@@ -737,7 +735,7 @@ export function mount(container) {
 
       jQuery.ajax({
         type: 'POST',
-        url: APP_CONFIG.API_BASE_URL + '/hrm/presensi/simpan-valid',
+        url: APP_CONFIG.BACKEND_PRODUCTION_URL + '/hrm/presensi/simpan-valid',
         dataType: 'JSON',
         data: ajaxData,
         ...ajaxOpts,

@@ -46,9 +46,36 @@
     <plugin name="cordova-plugin-splashscreen" spec="^6.0.2" />
     <!-- TODO menyusul saat fitur terkait dimigrasikan dari admin-finance-apk:
          cordova-plugin-camera (foto konfirmasi), cordova-plugin-file +
-         file-opener2 (cetak/simpan PDF, pola sama inventory-apk/purchase-finance-apk),
-         cordova-plugin-firebasex (notifikasi FCM, lihat NotificationManager di
-         admin-finance-apk/www/js/notification.js). Belum ditambah di sini supaya
-         scaffold awal ini tetap minimal sampai halaman yang membutuhkannya benar-benar
-         diporting, lihat README.md "Status Migrasi". -->
+         file-opener2 (cetak/simpan PDF, pola sama inventory-apk/purchase-finance-apk).
+         Belum ditambah di sini supaya scaffold awal ini tetap minimal sampai
+         halaman yang membutuhkannya benar-benar diporting, lihat README.md
+         "Status Migrasi". -->
+    <!-- [DITAMBAHKAN 2026-09-07 atas permintaan user, "pastikan firebasenya
+         juga sudah terinstall"] cordova-plugin-firebasex, integrasi push
+         notification (lib/firebaseNotif.js), versi & variable set disalin
+         PERSIS dari finance-v2-apk/config.xml (app sibling yang sudah py
+         plugin ini terpasang & terbukti build). Project Firebase yang sama
+         ("migrasi-internal", lihat project_info di
+         finance-v2-apk/google-services.json) TAPI file `google-services.json`
+         itu HARUS DIGANTI dgn versi yang py entry app Android baru utk
+         package `com.koperindo.admin` (widget id di atas), BELUM ADA SAMA
+         SEKALI di root repo ini saat plugin ini ditambahkan, jadi token FCM
+         TIDAK akan bisa didapat sampai app itu ditambahkan di Firebase
+         Console (Project Settings > Add app > Android, package name PERSIS
+         `com.koperindo.admin`) & file hasil downloadnya ditaruh di sini,
+         lihat juga docblock lib/firebaseNotif.js. Hanya berfungsi di build
+         APK asli; di browser (npm run dev) fitur ini no-op dgn pesan jelas. -->
+    <plugin name="cordova-plugin-firebasex" spec="^16.5.0">
+        <variable name="FIREBASE_ANALYTICS_VERSION" value="21.5.0" />
+        <variable name="FIREBASE_MESSAGING_VERSION" value="23.4.0" />
+        <variable name="FIREBASE_CONFIG_VERSION" value="21.5.0" />
+        <variable name="ANDROIDX_CORE_VERSION" value="1.12.0" />
+        <variable name="ANDROIDX_ANNOTATION_VERSION" value="1.7.1" />
+        <variable name="GOOGLE_PLAY_SERVICES_TAGMANAGER_VERSION" value="18.0.4" />
+        <variable name="GOOGLE_PLAY_SERVICES_AUTH_VERSION" value="20.7.0" />
+        <variable name="IOS_DEPLOYMENT_TARGET" value="11.0" />
+        <variable name="IOS_PUSH_CAPABILITY" value="true" />
+        <variable name="FIREBASE_MESSAGING_AUTO_INIT_ENABLED" value="true" />
+        <variable name="FIREBASE_ANALYTICS_COLLECTION_ENABLED" value="true" />
+    </plugin>
 </widget>

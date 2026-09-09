@@ -46,11 +46,38 @@
 // sudah punya pesan "Gagal menghubungi server" & tidak membiarkan UI diam
 // tanpa feedback). Kalau nanti terbukti bermasalah, cek temuan di atas dulu
 // sebelum menganggap ini bug porting.
+//
+// [UPDATE 2026-09-09 atas permintaan user, "pada Finance>Kas tetap bisa
+// melihat detail transaksi kas termasuk fotonya"] Endpoint list ini
+// TERNYATA sudah dialihkan ke backend-migrasi sejak cutover 2026-09-07
+// (`API_BASE_URL` = '.../admin', lihat lib/config.js) -- catatan
+// "TEMUAN 2026-08-26" di atas soal backend-production sudah basi, dibiarkan
+// apa adanya sbg riwayat. SELECT-nya (App\Admin\Controllers\FinanceController::
+// getTransaksiAccWithKasTransfer(), backend-migrasi) ditambah 2 kolom balik
+// (`id_transaksi_acc`, `bukti_foto_acc`) supaya popup Detail di sini bisa
+// dirender LANGSUNG dari baris yang sudah di-fetch (TANPA endpoint detail
+// terpisah, beda dari admin-finance-apk asli yang panggil
+// `/get-detail-transaksi-acc` per baris -- lihat docblock method itu).
+// Porting getDetailTransaksiAcc()/data_transaksi.html (blok "FOTO BUKTI")
+// asli, TAPI cuma bagian non-ekspedisi (Kategori/Keterangan/Nominal/Admin +
+// foto) -- blok khusus perusahaan ekspedisi (WA/bank/dst, muncul kalau
+// `id_perusahaan_acc` terisi) SENGAJA tidak ikut, di luar scope read-only
+// "Kas" ini (tidak diminta user).
 
 import tpl from './payable.html?raw';
 import { APP_CONFIG } from '../../lib/config.js';
 import { numberFormat } from '../../lib/format.js';
 import { showAuthedShell } from '../../lib/shell.js';
+
+const IMAGE_BASE = APP_CONFIG.IMAGE_BASE_URL;
+const IMG_BUKTI_ACCOUNTING = IMAGE_BASE + '/bukti_accounting/';
+
+function escapeHtml(text) {
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 
 export function mount(container) {
   container.innerHTML = tpl;
@@ -100,7 +127,7 @@ export function mount(container) {
   function loadKasOptions() {
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/get-kas-acc',
+      url: APP_CONFIG.API_BASE_URL + '/finance/get-kas-acc',
       dataType: 'JSON',
       data: { user_id: localStorage.getItem('user_id') },
       success(data) {
@@ -127,7 +154,7 @@ export function mount(container) {
     loadKasOptions();
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/get-transaksi-kas-acc',
+      url: APP_CONFIG.API_BASE_URL + '/finance/get-transaksi-kas-acc',
       dataType: 'JSON',
       data: {
         user_id: localStorage.getItem('user_id'),
@@ -158,7 +185,7 @@ export function mount(container) {
   function loadDataTransaksi() {
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/get-transaksi-acc-with-kas-transfer',
+      url: APP_CONFIG.API_BASE_URL + '/finance/get-transaksi-acc-with-kas-transfer',
       dataType: 'JSON',
       data: {
         user_id: localStorage.getItem('user_id'),
@@ -191,7 +218,9 @@ export function mount(container) {
         let totalDebet = 0;
         let totalKredit = 0;
 
-        const bodyHtml = rows.map((val, i) => {
+        const $tbody = jQuery('#payable_table_body').empty();
+
+        rows.forEach((val, i) => {
           const nominal = parseFloat(val.nominal_acc || 0);
           const isDebet = val.type_acc === 'Debet';
           if (isDebet) totalDebet += nominal;
@@ -200,19 +229,20 @@ export function mount(container) {
           // Tanda baris Debet -- biru muda, atas permintaan user.
           const rowCls = isDebet ? 'bg-blue-50' : '';
 
-          return `
-            <tr class="${rowCls}">
+          const $tr = jQuery(`
+            <tr class="${rowCls} cursor-pointer hover:bg-surface-raised" title="Dobel klik untuk lihat detail">
               <td class="td-center">${i + 1}</td>
               <td class="td-center">${formatTanggalTransaksi(val.tanggal_transaksi)}</td>
-              <td class="td-left">${val.kategori_acc || '-'}</td>
-              <td class="td-left">${val.keterangan || '-'}</td>
+              <td class="td-left">${escapeHtml(val.kategori_acc) || '-'}</td>
+              <td class="td-left">${escapeHtml(val.keterangan) || '-'}</td>
               <td class="td-center">${numberFormat(val.nominal_acc)}</td>
               <td class="td-center">${numberFormat(val.admin_acc)}</td>
             </tr>
-          `;
-        }).join('');
+          `);
+          $tr.on('dblclick', () => openDetail(val));
+          $tbody.append($tr);
+        });
 
-        jQuery('#payable_table_body').html(bodyHtml);
         setTotalCards(totalDebet, totalKredit);
       },
       error() {
@@ -246,6 +276,62 @@ export function mount(container) {
   }
 
   // ===========================================================
+  // Popup Detail Transaksi (BARU 2026-09-09 atas permintaan user, "pada
+  // Finance>Kas tetap bisa melihat detail transaksi kas termasuk fotonya")
+  // -- porting getDetailTransaksiAcc() (data.js) bagian non-ekspedisi, lihat
+  // docblock panjang di atas file. Dirender LANGSUNG dari baris `val` yang
+  // sudah ada di tabel (sudah bawa `bukti_foto_acc` sejak SELECT backend
+  // ditambah), tanpa fetch detail terpisah.
+  // ===========================================================
+  function openDetail(val) {
+    const isDebet = val.type_acc === 'Debet';
+    const foto = val.bukti_foto_acc && val.bukti_foto_acc !== 'null' && val.bukti_foto_acc !== '-'
+      ? `${IMG_BUKTI_ACCOUNTING}${val.bukti_foto_acc}`
+      : null;
+
+    jQuery('#payabled_body').html(`
+      <div>
+        <p class="mat-label">Tanggal</p>
+        <p class="text-ink-primary font-semibold">${formatTanggalTransaksi(val.tanggal_transaksi)}</p>
+      </div>
+      <div>
+        <p class="mat-label">Kategori</p>
+        <p class="text-ink-primary">${escapeHtml(val.kategori_acc) || '-'}</p>
+      </div>
+      <div>
+        <p class="mat-label">Keterangan</p>
+        <p class="text-ink-primary" style="white-space:pre-line;">${escapeHtml(val.keterangan) || '-'}</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <p class="mat-label">Nominal</p>
+          <p class="text-ink-primary font-bold">Rp ${numberFormat(val.nominal_acc)}</p>
+        </div>
+        <div>
+          <p class="mat-label">Admin</p>
+          <p class="text-ink-primary font-bold">Rp ${numberFormat(val.admin_acc)}</p>
+        </div>
+      </div>
+      <div>
+        <p class="mat-label">Tipe</p>
+        <span class="text-xs font-semibold px-2 py-0.5 rounded ${isDebet ? 'bg-info text-white' : 'bg-warning text-white'}">${escapeHtml(val.type_acc) || '-'}</span>
+      </div>
+      <div>
+        <p class="mat-label">Foto Bukti</p>
+        ${foto
+        ? `<img id="payabled_foto" src="${foto}" class="h-32 w-32 rounded border border-ink-faint object-cover cursor-zoom-in" alt="Bukti" />`
+        : '<p class="text-xs text-ink-muted">Tidak ada foto.</p>'}
+      </div>
+    `);
+
+    jQuery('#payabled_foto').on('click', function () {
+      app.photoBrowser.create({ photos: [jQuery(this).attr('src')] }).open();
+    });
+
+    app.popup.open('#popup-payable-detail');
+  }
+
+  // ===========================================================
   // Upload Bukti Transfer/Nota (Kas Kecil) -- lihat catatan scope di atas
   // file. Porting/penyederhanaan dari openTambahPopup()/simpanTransaksi().
   // ===========================================================
@@ -273,7 +359,7 @@ export function mount(container) {
 
     jQuery.ajax({
       type: 'POST',
-      url: APP_CONFIG.API_BASE_URL + '/get-kategori-acc',
+      url: APP_CONFIG.API_BASE_URL + '/finance/get-kategori-acc',
       dataType: 'JSON',
       data: {
         user_id: localStorage.getItem('user_id'),
@@ -311,6 +397,16 @@ export function mount(container) {
       jQuery('#pb_preview_wrap').removeClass('hidden');
     };
     reader.readAsDataURL(file);
+  });
+
+  // [FIX 2026-09-07 atas permintaan user, "pastikan untuk semua fitur
+  // preview gambar di semua menu punya fitur untuk zoom in/out dan rotate"]
+  // `#pb_preview` sudah py class `cursor-zoom-in` (payable.html) tapi TIDAK
+  // PERNAH punya binding klik sama sekali -- gap nyata dibanding pola yang
+  // sama di halaman lain (mis. #pay_upload_preview, pages/finance/payment.js).
+  // Dilengkapi sekalian saat kontrol zoom/rotate ditambah ke lib/photobrowser.js.
+  jQuery('#pb_preview').on('click', function () {
+    app.photoBrowser.create({ photos: [jQuery(this).attr('src')] }).open();
   });
 
   jQuery('#pb_btn_submit').on('click', submitUploadBukti);
@@ -363,7 +459,7 @@ export function mount(container) {
 
       jQuery.ajax({
         type: 'POST',
-        url: APP_CONFIG.API_BASE_URL + '/tambah-transaksi-acc',
+        url: APP_CONFIG.API_BASE_URL + '/finance/tambah-transaksi-acc',
         data: formData,
         processData: false,
         contentType: false,

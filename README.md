@@ -6,9 +6,104 @@ Migrasi dari [`admin-finance-apk`](../admin-finance-apk) (Cordova + Framework7 +
 `io.cordova.hellocordova` → `com.koperindo.admin`. Dibangun mulai 2026-08-26.
 
 Ini migrasi **setup/tooling + UI** (Framework7 → Tailwind), bukan rewrite fitur.
-Beda dari `inventory-apk`/`ekspedisi-apk`: app ini **tetap memanggil
-`backend-production` sepenuhnya**, TIDAK pindah ke `backend-migrasi` (modul
-Admin/Finance belum ada portingnya di sana) -- lihat `src/lib/config.js`.
+
+**[BERUBAH 2026-09-07]** SEBELUMNYA app ini tetap memanggil `backend-production`
+sepenuhnya (paragraf ini dulu bilang begitu) -- **sudah TIDAK BERLAKU**. Modul
+Admin ternyata sudah dibangun di `backend-migrasi` (`src/Admin/*`, mulai
+2026-09-02, terpisah dari sesi kerja README ini) & SEKARANG disambungkan:
+login+JWT, Point (Sales/Produksi), Ijin, dan bagian Finance yang backend-nya
+sudah ada (Payment read + Payable + Uang Saku baru sebagian) semua ke
+`backend-migrasi` (`https://migrasi.koperindo.id/admin`, lihat
+`src/lib/config.js`). **3 kelompok endpoint TETAP ke `backend-production`
+langsung** (via `APP_CONFIG.BACKEND_PRODUCTION_URL`, BUKAN belum sempat
+dipindah tapi BELUM ADA portingnya di backend-migrasi sama sekali) sampai
+menyusul diporting:
+- **Absen Validasi** (`pages/absen/validasi.js`) -- `/hrm/presensi/valid`,
+  `/simpan-valid`, termasuk fitur baru "Surat Terlambat" (`/proses-surat-terlambat`).
+- **Payment**, 2 aksi tulis saja (`pages/finance/payment.js`) --
+  `valid-bukti-pembayaran-admin`/`unvalid-bukti-pembayaran` (endpoint ini
+  memang selalu ke `val.asal_server` per-baris, bukan `API_BASE_URL`, jadi
+  otomatis tidak ikut ke mana pun cutover ini mengarah).
+- **Finance > Uang Saku** (`pages/finance/sales.js`, BARU 2026-09-07) --
+  `finance-visit-list/detail/validate` (`FinanceOperasionalController`,
+  backend-production) -- fitur baru, belum py padanan backend-migrasi.
+
+**[BARU 2026-09-07 atas permintaan user, "tambahkan menu baru yaitu SJ yang
+diambil dari menu SJ yg ada di ekspedisi-apk"]** Tab **SJ** (`pages/sj/list.js`,
+solo/tanpa sub-tab) -- porting varian **Customer** dari
+[`ekspedisi-apk`](../ekspedisi-apk)'s `adminSuratJalan.js` (BUKAN varian PO/
+sj-po/sj-retur-po, tidak diminta). Beda dari 3 tab lain: endpoint-nya
+(`/ekspedisi/admin/sj*`) BUKAN modul Admin, tapi modul **Ekspedisi**
+backend-migrasi (`APP_CONFIG.EKSPEDISI_API_BASE_URL`) -- klaim `role` di JWT
+kedua modul itu BERARTI HAL BEDA TOTAL (`App\Ekspedisi\Middleware\
+AdminOnlyMiddleware` mensyaratkan literal `role==='admin'`, sedangkan modul
+Admin isi `role` dgn kode jabatan mentah), jadi token sesi login utama app ini
+TIDAK BISA dipakai apa adanya ke situ. Diselesaikan dgn pola **companion
+token** yang sudah terbukti di `finance-v2-apk` (`payment_token`, Paytra →
+PayXindo): satu request login, `App\Admin\Controllers\AuthController::
+isEkspedisiAdmin()` cek `ekspedisi_m_admin_access` server-side, terbitkan
+`ekspedisi_token` KEDUA kalau lolos, disisipkan di response login yang sama
+(TIDAK ADA panggilan HTTP kedua) -- lihat `src/lib/ekspedisiAuth.js`
+(`ekspedisiAjax()`, penyimpanan token terpisah dari sesi login utama) &
+`pages/login/login.js`. Tab SJ **disembunyikan total** di navbar
+(`src/lib/shell.js`) utk akun yang tidak terdaftar sbg admin Ekspedisi (token
+null) -- halaman itu sendiri juga jaga-jaga nampilkan popup "Tidak Ada Akses"
+kalau dibuka langsung lewat hash tanpa token.
+
+Fase ini (list + search + filter tahun + toggle Riwayat + paginasi + modal
+Detail dobel-klik + aksi Validasi/Serah Terima via `<input type=file>`, TANPA
+plugin kamera Cordova, sama precedent dgn Payable/Uang Saku) -- **tombol
+"+ Buat SJ" (form pembuatan SJ baru, pecah SPK jadi banyak baris kirim, bagian
+paling kompleks di `adminNewSuratJalan.js` sumber) SENGAJA belum ada**,
+menyusul sbg langkah lanjutan terpisah.
+
+**[BARU 2026-09-07 atas permintaan user, "pastikan firebasenya juga sudah
+terinstall"]** Push notification (FCM) -- SALINAN nyaris persis dari
+[`finance-v2-apk`](../finance-v2-apk) (modul pertama yang dapat integrasi FCM
+di backend-migrasi): lonceng + badge unread + panel list di navbar
+(`src/lib/shell.js`), plumbing register/unregister token + fetch/mark-read
+notifikasi (`src/lib/firebaseNotif.js`), dipanggil dari `pages/login/login.js`
+(forceRefresh=true, baru login) & `main.js` (forceRefresh=false, startup
+selagi masih login) serta `lib/auth.js::logOut()` (cleanup SEBELUM
+`localStorage.clear()`). Backend: `App\Admin\Controllers\NotificationController`
+(BARU, salinan tipis dari modul Finance) + `App\Support\FirebaseService`
+(SUDAH generic, dipakai bareng lintas modul) di backend-migrasi, endpoint
+`/admin/fcm/*` & `/admin/notifications/*`. Plugin `cordova-plugin-firebasex`
+ditambahkan ke `config.xml`/`package.json` (versi & variable set SAMA PERSIS
+dgn finance-v2-apk).
+
+Sama scope-nya dgn finance-v2-apk: inti (badge unread + panel list + mark
+read) saja, BELUM wiring ke event bisnis spesifik modul Admin (mis. notifikasi
+otomatis saat validasi Point/Ijin/Finance tersimpan) -- backend BELUM
+mengirim notifikasi apa pun ke sini, tinggal dipanggil controller lain kapan
+pun dibutuhkan menyusul.
+
+**[BLOCKER, TIDAK BISA diselesaikan lewat kode]** `google-services.json`
+BELUM ADA SAMA SEKALI di root repo ini (beda dari finance-v2-apk yang sudah
+py file itu dgn entry `com.koperindo.finance`) -- widget id app ini
+(`com.koperindo.admin`) perlu didaftarkan sbg Android app BARU di Firebase
+Console, project yang sama dgn finance-v2-apk ("migrasi-internal", lihat
+`project_info` di `finance-v2-apk/google-services.json`: Project Settings >
+Add app > Android, package name PERSIS `com.koperindo.admin`), lalu file
+hasil downloadnya ditaruh di root repo ini. Tanpa ini, `FirebasePlugin.
+getToken()` akan gagal/tidak pernah resolve di build APK asli -- semua kode
+di atas sudah lengkap & siap pakai begitu file itu ditambahkan. Di browser
+(`npm run dev`) fitur ini no-op dgn pesan console yang jelas, TIDAK
+menghalangi bagian lain app berjalan normal.
+
+**[BARU 2026-09-07 atas permintaan user, "pastikan untuk semua fitur preview
+gambar di semua menu punya fitur untuk zoom in/out dan rotate"]** `lib/
+photobrowser.js` (lightbox `window.app.photoBrowser.create({photos}).open()`,
+dipanggil dari SEMUA menu yang punya preview foto -- Point Sales/CSS, Payment,
+Payable, Uang Saku, SJ, Ijin, lihat `grep -rl photoBrowser src/pages`)
+sekarang punya kontrol zoom in/out (tombol +/-, 100%-400%, step 25%) & putar
+90&deg; per klik, plus gesture pinch 2 jari + drag pan (saat sudah di-zoom) +
+double-tap toggle zoom + scroll wheel (browser dev), semua lewat Pointer
+Events. Karena semua pemanggil sudah lewat SATU modul ini, kontrolnya otomatis
+berlaku ke semua menu di atas tanpa perlu ubah pemanggilnya. Sekalian
+dibetulkan `#pb_preview` (pages/finance/payable.html, thumbnail upload bukti
+transfer/nota) yang py class `cursor-zoom-in` tapi TIDAK PERNAH punya binding
+klik sama sekali (celah nyata dibanding pola yang sama di halaman lain).
 
 ## Status per 2026-08-26
 
