@@ -196,14 +196,14 @@ export function mount(container) {
         lokasi_pabrik: localStorage.getItem('lokasi_pabrik'),
       },
       beforeSend() {
-        jQuery('#payable_table_body').html('<tr><td colspan="6" class="tbl-empty">Memuat data...</td></tr>');
+        jQuery('#payable_table_body').html('<tr><td colspan="7" class="tbl-empty">Memuat data...</td></tr>');
       },
       success(data) {
         const rows = data.data || [];
         jQuery('#payable_count').text(String(rows.length));
 
         if (!rows.length) {
-          jQuery('#payable_table_body').html('<tr><td colspan="6" class="tbl-empty">Tidak Ada Data.</td></tr>');
+          jQuery('#payable_table_body').html('<tr><td colspan="7" class="tbl-empty">Tidak Ada Data.</td></tr>');
           setTotalCards(0, 0);
           return;
         }
@@ -226,27 +226,29 @@ export function mount(container) {
           if (isDebet) totalDebet += nominal;
           else totalKredit += nominal;
 
-          // Tanda baris Debet -- biru muda, atas permintaan user.
-          const rowCls = isDebet ? 'bg-blue-50' : '';
-
           const $tr = jQuery(`
-            <tr class="${rowCls} cursor-pointer hover:bg-surface-raised" title="Dobel klik untuk lihat detail">
+            <tr class="cursor-pointer hover:bg-surface-raised" title="Dobel klik untuk lihat detail">
               <td class="td-center">${i + 1}</td>
               <td class="td-center">${formatTanggalTransaksi(val.tanggal_transaksi)}</td>
               <td class="td-left">${escapeHtml(val.kategori_acc) || '-'}</td>
               <td class="td-left">${escapeHtml(val.keterangan) || '-'}</td>
-              <td class="td-center">${numberFormat(val.nominal_acc)}</td>
+              <td class="td-right">${numberFormat(val.nominal_acc)}</td>
               <td class="td-center">${numberFormat(val.admin_acc)}</td>
+              <td class="td-center"><button class="btn-tbl btn-tbl--muted btn-payable-detail">Detail</button></td>
             </tr>
           `);
           $tr.on('dblclick', () => openDetail(val));
+          $tr.find('.btn-payable-detail').on('click', (e) => {
+            e.stopPropagation();
+            openDetail(val);
+          });
           $tbody.append($tr);
         });
 
         setTotalCards(totalDebet, totalKredit);
       },
       error() {
-        jQuery('#payable_table_body').html('<tr><td colspan="6" class="tbl-empty">Gagal menghubungi server.</td></tr>');
+        jQuery('#payable_table_body').html('<tr><td colspan="7" class="tbl-empty">Gagal menghubungi server.</td></tr>');
         jQuery('#payable_count').text('0');
         setTotalCards(0, 0);
       },

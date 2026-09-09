@@ -53,7 +53,8 @@
       <button id="payable_btn_upload_bukti" class="icon-btn icon-btn--primary w-8 h-8 flex-shrink-0 hidden" title="Upload Bukti Transfer / Nota Pembayaran">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </button>
       <button id="payable_refresh" class="icon-btn w-8 h-8 flex-shrink-0" title="Muat Ulang">
@@ -76,13 +77,14 @@
               <th class="td-center">Tanggal</th>
               <th class="td-left">Kategori</th>
               <th class="td-left">Keterangan</th>
-              <th class="td-center">Nominal</th>
+              <th class="td-right">Nominal</th>
               <th class="td-center">Admin</th>
+              <th class="td-center">Aksi</th>
             </tr>
           </thead>
           <tbody id="payable_table_body">
             <tr>
-              <td colspan="6" class="tbl-empty">Memuat data...</td>
+              <td colspan="7" class="tbl-empty">Memuat data...</td>
             </tr>
           </tbody>
         </table>
